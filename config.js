@@ -2,7 +2,7 @@
 
 window.AppConfig = {
   // 🏷️ Branding
-  appName: "Jio Calci",
+  appName: "Jio Games",
   appVersion: "1",
   logoUrl: "assets/logo.png",
 
