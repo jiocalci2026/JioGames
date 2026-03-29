@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boss 95</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    body {
+      background-color: #1609c9;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: hsl(231, 97%, 40%);
+      padding: 10px 15px;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.664);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    .logo img {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .app-name {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .wallet-card {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 8px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      color: black;
+      font-weight: bold;
+    }
+    .wallet-card img {
+      width: 24px;
+      height: 24px;
+      margin-right: 5px;
+    }
+    .wallet-balance {
+      font-size: 16px;
+    }
+    .scrollable-container {
+      position: absolute;
+      top: 50px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow-y: auto;
+      background: linear-gradient(to bottom, #274df5, #013ce0);
+      padding: 15px;
+    }
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .button-container .card {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 12px;
+      text-align: center;
+      font-weight: light;
+      font-size: 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      color: #0a0a0a;
+    }
+    .whatsapp {
+      background: linear-gradient(to right, #fbfdfc, #b0fcd0);
+    }
+    .telegram {
+      background: linear-gradient(to right, #feffff, #b2e0fd);
+    }
+    .group {
+      background: linear-gradient(to right, #effaf4, #b6fcd9);
+    }
+    .button-container img {
+      width: 20px;
+      height: 20px;
+    }
+    .large-card {
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-card {
+      height: 20vh;
+    }
+    .image-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .youtube-card {
+      position: relative;
+      padding-top: 56.25%;
+    }
+    .youtube-card iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .horizontal-cards {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .marquee-card {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .marquee-card marquee {
+      font-size: 14px;
+      font-weight: normal;
+      color: #333;
+    }
+    .clock-card {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(to right, #fefefe, #fde0f6);
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      font-size: 14px;
+      font-weight: light;
+      color: #0a0a0a;
+      white-space: nowrap;
+    }
+    .clock-card img {
+      width: 20px;
+      height: 20px;
+    }
+    .feature-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .feature-card {
+      flex: 1;
+      min-width: 22%;
+      background: white;
+      padding: 2px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+    }
+    .feature-card img {
+      width: 30px;
+      height: 30px;
+      margin-bottom: 2px;
+    }
+    .feature-card span {
+      font-size: 13px;
+      font-weight: lighter;
+      color: #333;
+      display: block;
+    }
+    .market-card {
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+    .market-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .market-header img {
+      width: 50px;
+      height: 50px;
+    }
+    .market-info {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    .market-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .market-name {
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+    }
+    .market-result {
+      color: #274df5;
+      font-size: 14px;
+      text-align: center;
+    }
+    .market-time {
+      font-size: 14px;
+      color: gray;
+      text-align: center;
+    }
+    .market-status {
+      text-align: center;
+      margin-top: 5px;
+      font-size: 14px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Title Bar -->
+  <div class="header" id="title-bar">
+    <div class="logo">
+      <img id="app-logo" src="" alt="Logo">
+      <span id="app-name" class="app-name"></span>
+    </div>
+    <div class="wallet-card">
+      <img src="https://cdn-icons-png.flaticon.com/128/584/584026.png" alt="Wallet">
+      <span class="wallet-balance" id="wallet-amount">₹500</span>
+    </div>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="scrollable-container" id="page-container">
+    
+    <!-- Cards -->
+    <div class="button-container">
+      <div class="card whatsapp" id="btn-whatsapp">
+        <img src="https://cdn-icons-png.flaticon.com/128/733/733585.png" alt="WhatsApp">
+        <span>WhatsApp</span>
+      </div>
+      <div class="card telegram" id="btn-telegram">
+        <img src="https://cdn-icons-png.flaticon.com/128/2111/2111644.png" alt="Telegram">
+        <span>Telegram</span>
+      </div>
+      <div class="card group" id="btn-group">
+        <img src="https://cdn-icons-png.flaticon.com/128/733/733585.png" alt="Group">
+        <span>Group</span>
+      </div>
+    </div>
+
+    <!-- Banner Image -->
+    <div class="large-card image-card">
+      <img src="https://data.textstudio.com/output/sample/animated/4/6/0/6/sample-3-16064.gif" alt="Promo Image">
+    </div>
+
+    <!-- YouTube Player -->
+    <div class="large-card youtube-card">
+      <iframe src="https://www.youtube.com/embed/_1BU0Mkojww" allowfullscreen></iframe>
+    </div>
+
+    <!-- Marquee + Clock -->
+    <div class="horizontal-cards">
+      <div class="marquee-card">
+        <marquee behavior="scroll" direction="left">🔥 Welcome to Boss 95 Group! Stay updated with the latest news and trends. 🔥</marquee>
+      </div>
+      <div class="clock-card">
+        <img src="https://cdn-icons-png.flaticon.com/128/10473/10473481.png" alt="Clock">
+        <span id="live-time">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="feature-container">
+      <div class="feature-card" id="btn-deposit"><img src="https://cdn-icons-png.flaticon.com/128/6418/6418336.png" alt="Deposit"><span>Deposit</span></div>
+      <div class="feature-card" id="btn-withdraw"><img src="https://cdn-icons-png.flaticon.com/128/9590/9590117.png" alt="Withdraw"><span>Withdraw</span></div>
+      <div class="feature-card" id="btn-bids"><img src="https://cdn-icons-png.flaticon.com/128/3176/3176366.png" alt="Bids"><span>Bids</span></div>
+      <div class="feature-card" id="btn-share"><img src="https://cdn-icons-png.flaticon.com/128/2099/2099122.png" alt="Share"><span>Share</span></div>
+      <div class="feature-card" id="btn-history"><img src="https://cdn-icons-png.flaticon.com/128/4394/4394574.png" alt="History"><span>History</span></div>
+      <div class="feature-card" id="btn-profile"><img src="https://cdn-icons-png.flaticon.com/128/1999/1999625.png" alt="Profile"><span>Profile</span></div>
+      <div class="feature-card" id="btn-rates"><img src="https://cdn-icons-png.flaticon.com/128/1365/1365307.png" alt="Rates"><span>Rates</span></div>
+      <div class="feature-card" id="btn-settings"><img src="https://cdn-icons-png.flaticon.com/128/839/839395.png" alt="Settings"><span>Settings</span></div>
+    </div>
+
+    <div id="market-container"></div>
+  </div>
+
+<script src="config.js" ></script>
+
+<script>
+  const cfg = window.AppConfig;
+
+  // Safety check
+  if (!cfg) {
+    console.error("AppConfig is not defined.");
+  } else {
+    // Apply branding
+    document.getElementById("app-logo").src = cfg.logoUrl;
+    document.getElementById("app-name").textContent = cfg.appName;
+
+    // Apply background
+    const container = document.getElementById("page-container");
+    if (cfg.useGradient) {
+      container.style.background = `linear-gradient(135deg, ${cfg.mainColor1}, ${cfg.mainColor2})`;
+    } else {
+      container.style.backgroundColor = cfg.backgroundColor || "#ffffff";
+    }
+
+    // Title bar color
+    document.getElementById("title-bar").style.backgroundColor = cfg.mainColor1;
+
+    // Font
+    document.body.style.fontFamily = cfg.fontFamily;
+  }
+</script>
+
+  <script>
+    const marketContainer = document.getElementById("market-container");
+    for (let i = 1; i <= 200; i++) {
+      const card = document.createElement("div");
+      card.className = "market-card";
+      card.innerHTML = `
+        <div class="market-header">
+          <img id="market-chart-${i}" src="https://cdn-icons-png.flaticon.com/128/3652/3652191.png" alt="Chart">
+          <div class="market-info">
+            <div class="market-column">
+              <div class="market-name">Market ${i}</div>
+              <div class="market-result">###-##-###</div>
+            </div>
+            <div class="market-column">
+              <div class="market-time">Open 10:00 AM</div>
+              <div class="market-time">Close 05:00 PM</div>
+            </div>
+          </div>
+          <img id="market-play-${i}" src="https://cdn-icons-png.flaticon.com/128/2377/2377793.png" alt="Play">
+        </div>
+        <div class="market-status">Market is Running</div>`;
+      marketContainer.appendChild(card);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      let seconds = now.getSeconds();
+      const amPm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+      hours = hours < 10 ? "0" + hours : hours;
+      minutes = minutes < 10 ? "0" + minutes : minutes;
+      seconds = seconds < 10 ? "0" + seconds : seconds;
+      document.getElementById("live-time").textContent = `${hours}:${minutes}:${seconds} ${amPm}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>

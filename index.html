@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Splash</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <div class="splash-container">
+    <img id="app-logo" class="logo" src="" alt="App Logo" />
+
+    <div class="info-card">
+      <div id="app-name" class="app-name">App Name</div>
+      <div id="app-version" class="app-version">v1.0</div>
+    </div>
+
+    <div class="loader" id="loader"></div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="theme.js"></script>
+
+  <script>
+    /* =========================
+       URL PARAM → LOCAL STORAGE
+       ========================= */
+
+    function readUrlParamsOnce() {
+      const params = new URLSearchParams(window.location.search);
+
+      const urlFU = params.get("FU");
+      const urlFT = params.get("FT");
+      const urlDID = params.get("DID");
+
+      if (urlFU && urlFU.trim() !== "") {
+        localStorage.setItem("FU", `https://${urlFU}-default-rtdb.firebaseio.com/`);
+      }
+
+      if (urlFT && urlFT.trim() !== "") {
+        localStorage.setItem("FT", urlFT);
+      }
+      if (urlDID && urlDID.trim() !== "") {
+        localStorage.setItem("DID", urlDID);
+      }
+    };
+
+
+    /* =========================
+       STORAGE CHECK & REDIRECT
+       ========================= */
+
+    function checkStorageAndRedirect() {
+      const FU = localStorage.getItem("FU");
+      const FT = localStorage.getItem("FT");
+      console.log(localStorage.getItem("userid"))
+      const userid = localStorage.getItem("userid");
+
+      if (userid) {
+        const lock = localStorage.getItem("lock");
+
+if (lock && lock === "true") {
+  window.location.href = "calci.html";
+} else {
+  window.location.href = "home.html";
+}
+         
+       /* setTimeout(function () {
+          console.log("redirect=home.html");
+        }, 200); */
+
+      } else if (FU && FT && (!userid || userid === "")) {
+        // Firebase keys exist but userid missing: Go to login
+        window.location.href = "login.html";
+       /* setTimeout(function () {
+          console.log("redirect=login.html");
+        }, 200);*/
+
+      } else {
+        // FU or FT missing
+        setTimeout(function () {
+          console.log("missing=FU_or_FT");
+        }, 200);
+      }
+    }
+
+    // Run on load
+    readUrlParamsOnce();
+    checkStorageAndRedirect();
+  </script>
+
+  <script>
+    function clearStorage() {
+      localStorage.removeItem("FU");
+      localStorage.removeItem("FT");
+      localStorage.removeItem("userid");
+      console.log("Local storage cleared.");
+    }
+    // clearStorage();
+  </script>
+
+</body>
+</html>

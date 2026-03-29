@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Group Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+
+<!-- Firebase v8 compat -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+:root{
+  --bg:#ece5dd;
+  --card:#fff;
+  --me:#dcf8c6;
+  --text:#111;
+  --link:#1a73e8;
+}
+body.dark{
+  --bg:#0f1a20;
+  --card:#1e2a30;
+  --me:#054740;
+  --text:#fff;
+  --link:#4ea1ff;
+}
+*{box-sizing:border-box;font-family:system-ui}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+}
+header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  height:60px;
+  background:#075e54;
+  color:#fff;
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  z-index:10;
+}
+header small{opacity:.8}
+header button{background:none;border:none;color:#fff;font-size:18px;margin-left:8px}
+
+#chat{
+  position:fixed;
+  top:60px;
+  bottom:60px;
+  left:0;
+  right:0;
+  padding:10px;
+  overflow-y:auto;
+}
+
+.date{
+  text-align:center;margin:10px 0;
+  font-size:12px;opacity:.7
+}
+.msg{
+  max-width:80%;
+  padding:8px 10px;
+  border-radius:8px;
+  margin:6px 0;
+  background:var(--card);
+  position:relative;
+  word-wrap:break-word
+}
+.me{background:var(--me);margin-left:auto}
+.sender{font-size:11px;font-weight:600;opacity:.8}
+.time{font-size:10px;opacity:.6;text-align:right}
+.tick{font-size:10px;margin-left:4px}
+.msg a{color:var(--link);text-decoration:none}
+
+footer{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  height:60px;
+  display:flex;
+  padding:8px;
+  background:#f0f0f0;
+  z-index:10;
+}
+body.dark footer{background:#111}
+footer input{
+  flex:1;padding:10px;border-radius:20px;
+  border:none;outline:none
+}
+footer button{
+  margin-left:8px;border:none;
+  background:#25d366;color:#fff;
+  border-radius:50%;width:42px;height:42px;
+  font-size:18px
+}
+
+#snackbar{
+  visibility:hidden;
+  padding:12px 18px;
+  border-radius:6px;
+  position:fixed;
+  bottom:72px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:999;
+  font-size:14px;
+  white-space:nowrap;
+  pointer-events:none;
+  transition:visibility 0s,opacity 0.3s;
+  opacity:0;
+}
+#snackbar.show{
+  visibility:visible;
+  opacity:1;
+}
+#snackbar.gray{background:#555;color:#fff;}
+#snackbar.red{background:#c0392b;color:#fff;}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px">
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+      alt="WhatsApp"
+      style="width:35px;height:35px"
+    >
+    <div>
+      <b>Group Chat</b><br>
+      <small id="users">Total: 15K+ | Active: 750+</small>
+    </div>
+  </div>
+
+  <div>
+    <button onclick="toggleTheme()">🌙</button>
+    <button id="notifBtn" onclick="toggleNotification()">🔔</button>
+  </div>
+</header>
+
+<div id="chat"></div>
+
+<footer>
+  <input id="msg" placeholder="Type message">
+  <button onclick="send()">➤</button>
+</footer>
+
+<div id="snackbar"></div>
+
+<script>
+/* ---------- CONFIG ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDwOkSGxYdh_ahXm_8Yd0bErlowxmMxYws",
+  databaseURL: "https://boss-95-groupchat-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+firebase.auth().signInAnonymously();
+
+const db = firebase.database();
+const chatRef = db.ref("chat");
+const isAdmin = new URLSearchParams(location.search).get("admin")==="true";
+
+const username = (localStorage.getItem("username")||"User").substring(0,10);
+const mobile = (localStorage.getItem("mobile")||"0000000000").slice(-4);
+const sender = isAdmin ? "Admin 🔰" : `${username}... ${mobile}`;
+
+/* ---------- NOTIFICATION TOGGLE ---------- */
+let notifOn = localStorage.getItem("notif") !== "off";
+function updateNotifBtn(){
+  document.getElementById("notifBtn").innerText = notifOn ? "🔔" : "🔕";
+}
+function toggleNotification(){
+  notifOn = !notifOn;
+  localStorage.setItem("notif", notifOn ? "on" : "off");
+  updateNotifBtn();
+  if(notifOn){
+    console.log("Chat Notification is ON");
+  } else {
+    console.log("Chat Notification is OFF");
+  }
+}
+updateNotifBtn();
+
+/* ---------- SNACKBAR ---------- */
+let snackTimer = null;
+function snackbar(t, color="gray", dur=2500){
+  const s = document.getElementById("snackbar");
+  s.innerText = t;
+  s.className = "show " + color;
+  if(snackTimer) clearTimeout(snackTimer);
+  snackTimer = setTimeout(() => { s.className = ""; }, dur);
+}
+
+/* ---------- THEME ---------- */
+(function(){
+  if(localStorage.getItem("theme")==="dark") document.body.classList.add("dark");
+})();
+function toggleTheme(){
+  const isDark = document.body.classList.toggle("dark");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+}
+
+/* ---------- SHOW WELCOME SNACKBAR ---------- */
+window.addEventListener("load", () => {
+  snackbar("Sending Mobile Number not allowed", "gray", 5000);
+});
+
+/* ---------- HELPERS ---------- */
+function todayLabel(d){
+  const t=new Date(),x=new Date(d);
+  if(t.toDateString()===x.toDateString())return "Today";
+  t.setDate(t.getDate()-1);
+  if(t.toDateString()===x.toDateString())return "Yesterday";
+  return x.toDateString();
+}
+function linkify(t){
+  return t.replace(/(https?:\/\/[^\s]+)/g,
+    `<a href="#" onclick="openLink('$1')">$1</a>`)
+}
+function openLink(u){
+  console.log("ActivityStarter=url==="+u);
+  navigator.clipboard.writeText(u);
+}
+
+/* ---------- MOBILE NUMBER DETECTION (STRONG) ---------- */
+
+// Number-word to digit map
+const wordToDigit = {
+  zero:'0', one:'1', two:'2', three:'3', four:'4',
+  five:'5', six:'6', seven:'7', eight:'8', nine:'9',
+  oh:'0', o:'0'
+};
+
+// Similar-looking character substitution map
+const charMap = {
+  'O':'0','o':'0','I':'1','l':'1','|':'1',
+  'Z':'2','z':'2','E':'3','A':'4','S':'5',
+  's':'5','G':'6','g':'6','T':'7','B':'8',
+  'b':'8','q':'9','g':'9'
+};
+
+function normalizeText(txt){
+  // Replace number words with digits (whole words only)
+  let t = txt.toLowerCase();
+  t = t.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|oh)\b/g, m => wordToDigit[m]);
+  // Replace lookalike chars with digits
+  t = t.split('').map(c => charMap[c] !== undefined ? charMap[c] : c).join('');
+  // Strip everything except digits and newlines temporarily
+  return t;
+}
+
+function extractDigits(txt){
+  // Remove all non-digit characters
+  return txt.replace(/\D/g, '');
+}
+
+function containsMobileStrong(txt){
+  // === Pattern 5: combine across newlines — treat whole text as one ===
+  // === Pattern 1,2,3,4: normalize then extract digits ===
+  const normalized = normalizeText(txt);
+  const digits = extractDigits(normalized);
+
+  // Check for any 10-digit Indian mobile pattern within the digit string
+  // Indian mobiles start with 6,7,8,9
+  const mobileRegex = /[6-9]\d{9}/;
+
+  if(mobileRegex.test(digits)){
+    // Exclude all-same digit patterns like 9999999999
+    const match = digits.match(/[6-9]\d{9}/);
+    if(match && !/^(\d)\1{9}$/.test(match[0])) return true;
+  }
+
+  // === Pattern 6: cross-message check ===
+  // (handled separately via lastMsg in send())
+
+  return false;
+}
+
+// Store last sent message for cross-message pattern detection
+let lastSentDigits = "";
+
+function crossMessageMobileCheck(currentTxt){
+  const curDigits = extractDigits(normalizeText(currentTxt));
+  const combined = lastSentDigits + curDigits;
+  const mobileRegex = /[6-9]\d{9}/;
+  if(combined.length >= 10 && mobileRegex.test(combined)){
+    const match = combined.match(/[6-9]\d{9}/);
+    if(match && !/^(\d)\1{9}$/.test(match[0])) return true;
+  }
+  return false;
+}
+
+/* ---------- RENDER ---------- */
+const rendered = new Set();
+
+chatRef.limitToLast(200).on("child_added", dateSnap => {
+  const date = dateSnap.key;
+  if(!document.getElementById("date-"+date)){
+    const d=document.createElement("div");
+    d.className="date";
+    d.id="date-"+date;
+    d.innerText=todayLabel(date);
+    chat.appendChild(d);
+  }
+  chatRef.child(date).limitToLast(200).on("child_added", msgSnap => {
+    const id=date+msgSnap.key;
+    if(rendered.has(id))return;
+    rendered.add(id);
+    const data=JSON.parse(msgSnap.val());
+    draw(msgSnap.key,data,date);
+  });
+});
+
+function draw(key,[msg,from,time,type],date){
+  const d=document.createElement("div");
+  d.className="msg"+(from===sender?" me":"");
+  d.ondblclick=()=>{
+    if(isAdmin){
+      db.ref(`chat/${date}/${key}`).remove();
+      d.remove();
+    }else{
+      navigator.clipboard.writeText(msg);
+      snackbar("Message Copied","gray");
+    }
+  };
+  d.oncontextmenu=e=>{
+    e.preventDefault();
+    navigator.clipboard.writeText(msg);
+    snackbar("Message Copied","gray");
+  };
+  d.innerHTML=`
+    <div class="sender">${from}</div>
+    <div>${linkify(msg).replace(/\|\|/g,"<br>")}</div>
+    <div class="time">${time}<span class="tick">✔✔</span></div>
+  `;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+/* ---------- SEND ---------- */
+function send(){
+  const t = msg.value.trim();
+  if(!t) return;
+
+  if(!isAdmin){
+    // Check current message
+    if(containsMobileStrong(t)){
+      snackbar("Mobile Number is not Allowed", "red");
+      return;
+    }
+    // Check cross-message pattern (pattern 6)
+    if(crossMessageMobileCheck(t)){
+      snackbar("Mobile Number is not Allowed", "red");
+      lastSentDigits = ""; // reset after catch
+      return;
+    }
+  }
+
+  // Console log for Kodular trigger
+  console.log(`ChatNF=${sender}||&||${t}`);
+
+  const now = new Date();
+  const d = now.toISOString().slice(0,10);
+  const pad = n => n.toString().padStart(2,"0");
+  const k =
+    now.getFullYear() +
+    pad(now.getMonth()+1) +
+    pad(now.getDate()) + "-" +
+    pad(now.getHours()) + ":" +
+    pad(now.getMinutes()) + ":" +
+    pad(now.getSeconds());
+
+  const time = now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  chatRef.child(d).child(k).set(JSON.stringify([t,sender,time,"T"]));
+
+  db.ref("Change/x").set(JSON.stringify([t,sender,time,"T",k]));
+
+  // Update last sent digits for cross-message check
+  lastSentDigits = extractDigits(normalizeText(t));
+
+  msg.value = "";
+}
+
+/* ---------- ENTER KEY SEND ---------- */
+document.getElementById("msg").addEventListener("keydown", e => {
+  if(e.key === "Enter") send();
+});
+</script>
+
+</body>
+</html>

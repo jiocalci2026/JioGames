@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      min-height: 100vh;
+    }
+
+    /* =====================
+       HEADER (same as home.html)
+       ===================== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: hsl(231, 97%, 40%);
+      padding: 10px 15px;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.664);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back-btn { display: none; }
+
+    .header .logo {
+      display: flex;
+      align-items: center;
+    }
+    .header .logo img {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      margin-right: 8px;
+      object-fit: cover;
+    }
+    .header .page-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* =====================
+       SCROLL BODY
+       ===================== */
+    .scrollable-container {
+      position: absolute;
+      top: 56px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow-y: auto;
+      padding: 16px 14px 30px;
+      background: transparent;
+    }
+
+    /* =====================
+       SECTION LABEL
+       ===================== */
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.55;
+      margin: 18px 0 8px 4px;
+    }
+
+    /* =====================
+       SETTINGS CARD
+       ===================== */
+    .setting-card {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    /* =====================
+       LANGUAGE SELECTOR ROW
+       ===================== */
+    .lang-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 12px;
+    }
+    .lang-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(3,121,255,0.12), rgba(4,210,247,0.12));
+    }
+    .lang-info { flex: 1; }
+    .lang-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+    }
+    .lang-subtitle {
+      font-size: 11px;
+      color: #888;
+      margin-top: 1px;
+    }
+    .lang-select {
+      border: 1.5px solid;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      background: white;
+      cursor: pointer;
+      outline: none;
+      min-width: 110px;
+    }
+
+    /* =====================
+       TOGGLE ROWS
+       ===================== */
+    .toggle-row {
+      padding: 14px 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .toggle-row:first-child { border-top: none; }
+
+    .toggle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .toggle-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toggle-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .toggle-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+    }
+    .toggle-status-text {
+      font-size: 11px;
+      margin-top: 1px;
+      font-weight: 500;
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #ccc;
+      border-radius: 26px;
+      transition: 0.3s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    input:checked + .slider { background: #22c55e; }
+    input:checked + .slider:before { transform: translateX(24px); }
+
+    /* Description */
+    .toggle-desc {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.6;
+      background: #f7f9ff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 4px;
+      border-left: 3px solid;
+    }
+
+    /* =====================
+       NOTIFICATION PREVIEW
+       ===================== */
+    .notif-preview {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #1c1c1e;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+    .notif-preview-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .notif-preview-body { flex: 1; }
+    .notif-preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .notif-preview-app {
+      font-size: 11px;
+      font-weight: 600;
+      color: #aaa;
+      letter-spacing: 0.4px;
+    }
+    .notif-preview-time {
+      font-size: 10px;
+      color: #666;
+    }
+    .notif-preview-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .notif-preview-msg {
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    /* =====================
+       CALCULATOR LOCK INFO
+       ===================== */
+    .calc-steps {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .calc-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: #444;
+    }
+    .calc-step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .calc-step-text { line-height: 1.5; }
+
+    .calc-visual {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      background: #1c1c1e;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .calc-display {
+      background: #2c2c2e;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      flex: 1;
+      text-align: right;
+      letter-spacing: 1px;
+    }
+    .calc-arrow {
+      font-size: 16px;
+      color: #aaa;
+    }
+    .calc-result {
+      font-size: 12px;
+      font-weight: 600;
+      color: #22c55e;
+      text-align: center;
+    }
+
+    /* =====================
+       SNACKBAR
+       ===================== */
+    .snackbar {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 999;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      white-space: nowrap;
+    }
+    .snackbar.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+
+    /* ===================== PIN MODAL ===================== */
+    #pinOverlay { display: none; }
+    #pinOverlay.active { display: flex !important; }
+    #pinOverlay.active #pinSheet {
+      transform: translate(-50%, -50%) scale(1) !important;
+      opacity: 1 !important;
+    }
+
+    .pin-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid #cbd5e1;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .pin-dot.filled {
+      background: var(--pin-color, #3b82f6);
+      border-color: var(--pin-color, #3b82f6);
+      transform: scale(1.15);
+    }
+    .pin-dot.error {
+      background: #ef4444; border-color: #ef4444;
+      animation: pinShake 0.4s ease;
+    }
+    .pin-dot.success {
+      background: #22c55e; border-color: #22c55e;
+    }
+
+    .pin-key {
+      width: 100%; aspect-ratio: 1;
+      border-radius: 50%;
+      border: none;
+      background: #f4f6fb;
+      font-size: 22px; font-weight: 600;
+      color: #111;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .pin-key:active {
+      background: #e2e8f0;
+      transform: scale(0.93);
+    }
+    .pin-del {
+      background: #fff0f0; color: #ef4444;
+    }
+    .pin-del:active { background: #fde8e8; }
+
+    @keyframes pinShake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    /* Themed gradient header dynamically set */
+    #settings-header { transition: background 0.3s; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ===================== HEADER ===================== -->
+  <div class="header" id="settings-header">
+    <div class="header-left">
+      <div class="back-btn" onclick="history.back()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </div>
+      <div class="logo">
+        <img id="app-logo" src="assets/logo.png" alt="Logo" />
+        <span class="page-title" id="page-heading">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SCROLLABLE BODY ===================== -->
+  <div class="scrollable-container">
+
+    <!-- LANGUAGE -->
+    <div class="section-label" id="lbl-general">General</div>
+    <div class="setting-card">
+      <div class="lang-row">
+        <div class="lang-icon">🌐</div>
+        <div class="lang-info">
+          <div class="lang-title" id="lbl-language">Language</div>
+          <div class="lang-subtitle" id="lbl-choose-lang">Choose your preferred language</div>
+        </div>
+        <select class="lang-select" id="langSelect" onchange="onLangChange(this.value)">
+          <option value="en">🇬🇧 English</option>
+          <option value="hi">🇮🇳 हिंदी</option>
+          <option value="te">Telugu</option>
+          <option value="kn">ಕನ್ನಡ</option>
+          <option value="mr">मराठी</option>
+          <option value="ta">தமிழ்</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="section-label" id="lbl-notif-section">Notifications</div>
+    <div class="setting-card">
+
+      <!-- Personal Notification -->
+      <div class="toggle-row">
+        <div class="toggle-header">
+          <div class="toggle-header-left">
+            <div class="toggle-icon" style="background: linear-gradient(135deg,#e0f2fe,#bae6fd);">🔔</div>
+            <div>
+              <div class="toggle-title" id="lbl-personal-title">Personal Notification</div>
+              <div class="toggle-status-text" id="personal-status-txt" style="color:#22c55e;"></div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="togglePersonal" onchange="onToggle('personal', this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-desc" id="desc-personal" style="border-color: #3b82f6;"></div>
+        <!-- Notification Preview -->
+        <div class="notif-preview" style="margin-top:10px;">
+          <img class="notif-preview-logo" src="assets/logo.png" alt="Logo" id="notif-logo-personal" />
+          <div class="notif-preview-body">
+            <div class="notif-preview-header">
+              <span class="notif-preview-app" id="app-name-personal">BOSS 95</span>
+              <span class="notif-preview-time">now</span>
+            </div>
+            <div class="notif-preview-title" id="lbl-notif-p-title">Admin</div>
+            <div class="notif-preview-msg" id="lbl-notif-p-msg">Points Added Successfully ✅</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Notification -->
+      <div class="toggle-row">
+        <div class="toggle-header">
+          <div class="toggle-header-left">
+            <div class="toggle-icon" style="background: linear-gradient(135deg,#fef9c3,#fde68a);">🎯</div>
+            <div>
+              <div class="toggle-title" id="lbl-result-title">Result Notification</div>
+              <div class="toggle-status-text" id="result-status-txt" style="color:#22c55e;"></div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleResult" onchange="onToggle('result', this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-desc" id="desc-result" style="border-color: #f59e0b;"></div>
+        <!-- Result Preview -->
+        <div class="notif-preview" style="margin-top:10px;">
+          <img class="notif-preview-logo" src="assets/logo.png" alt="Logo" id="notif-logo-result" />
+          <div class="notif-preview-body">
+            <div class="notif-preview-header">
+              <span class="notif-preview-app" id="app-name-result">BOSS 95</span>
+              <span class="notif-preview-time">now</span>
+            </div>
+            <div class="notif-preview-title" id="lbl-notif-r-title">KALYAN</div>
+            <div class="notif-preview-msg" id="lbl-notif-r-msg">123-66-123 🎰</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECURITY -->
+    <div class="section-label" id="lbl-security-section">Security</div>
+    <div class="setting-card">
+
+      <!-- App Lock -->
+      <div class="toggle-row">
+        <div class="toggle-header">
+          <div class="toggle-header-left">
+            <div class="toggle-icon" style="background: linear-gradient(135deg,#fce7f3,#fbcfe8);">🔒</div>
+            <div>
+              <div class="toggle-title" id="lbl-lock-title">App Lock (Calculator)</div>
+              <div class="toggle-status-text" id="lock-status-txt" style="color:#22c55e;"></div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleLock" onchange="onLockToggleRequest(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Description -->
+        <div class="toggle-desc" id="desc-lock" style="border-color: #ec4899;"></div>
+
+        <!-- Calculator Visual Explanation -->
+        <div class="calc-steps" id="calc-steps-ui">
+          <div class="calc-step">
+            <div class="calc-step-num step-num-colored">1</div>
+            <div class="calc-step-text" id="calc-step1"></div>
+          </div>
+          <div class="calc-step">
+            <div class="calc-step-num step-num-colored">2</div>
+            <div class="calc-step-text" id="calc-step2"></div>
+          </div>
+          <div class="calc-step">
+            <div class="calc-step-num step-num-colored">3</div>
+            <div class="calc-step-text" id="calc-step3"></div>
+          </div>
+          <div class="calc-step">
+            <div class="calc-step-num step-num-colored">4</div>
+            <div class="calc-step-text" id="calc-step4"></div>
+          </div>
+        </div>
+
+        <!-- Calculator visual mock -->
+        <div class="calc-visual" style="margin-top:10px;">
+          <div>
+            <div style="font-size:10px; color:#aaa; margin-bottom:4px;">✅ Correct Password</div>
+            <div class="calc-display" id="calc-display-correct">1234 =</div>
+            <div class="calc-result" style="margin-top:4px;" id="calc-correct-label">→ Home Page 🏠</div>
+          </div>
+          <div class="calc-arrow">|</div>
+          <div>
+            <div style="font-size:10px; color:#aaa; margin-bottom:4px;">❌ Wrong Password</div>
+            <div class="calc-display" id="calc-display-wrong">5678 =</div>
+            <div class="calc-result" style="color:#f87171; margin-top:4px;" id="calc-wrong-label">→ Shows Result</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 20px;"></div>
+  </div>
+
+
+  <!-- ===================== PIN SETUP MODAL ===================== -->
+  <div id="pinOverlay" style="display:none; position:fixed; inset:0; z-index:999;
+    background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center;">
+    <div id="pinSheet" style="
+      position:fixed;
+      top:50%; left:50%;
+      transform:translate(-50%, -50%) scale(0.85);
+      opacity:0;
+      transition:transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+      width:calc(100% - 48px);
+      max-width:340px;
+      max-height:90vh;
+      overflow-y:auto;
+      background:#fff; border-radius:24px;
+      padding:22px 18px 26px;
+      box-shadow:0 8px 40px rgba(0,0,0,0.35);
+      box-sizing:border-box;">
+
+      <!-- Header row -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <div style="font-size:18px; font-weight:700; color:#111;" id="pinTitle">Set App Lock PIN</div>
+        <button onclick="closePinModal()" style="
+          border:none; background:#f0f0f0; border-radius:50%;
+          width:32px; height:32px; font-size:18px; cursor:pointer;
+          display:flex; align-items:center; justify-content:center; color:#555;">✕</button>
+      </div>
+      <div style="font-size:12px; color:#888; margin-bottom:18px;" id="pinSubtitle">Choose a 4-digit PIN to lock your app</div>
+
+      <!-- Old PIN suggestion banner (shown if old PIN exists) -->
+      <div id="oldPinBanner" style="display:none;
+        background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px;
+        padding:10px 14px; margin-bottom:14px; cursor:pointer;"
+        onclick="useOldPin()">
+        <div style="font-size:12px; color:#2563eb; font-weight:600;">🔑 Continue with Old PIN</div>
+        <div style="font-size:11px; color:#3b82f6; margin-top:2px;">
+          Your previous PIN is saved. Tap to keep it: <strong id="oldPinMask">••••</strong>
+        </div>
+      </div>
+
+      <!-- PIN dot display -->
+      <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;" id="pinDots">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+      </div>
+
+      <!-- Step label -->
+      <div style="text-align:center; font-size:12px; color:#888; margin-bottom:16px; font-weight:500;" id="pinStepLabel">Step 1 of 2 — Enter new PIN</div>
+
+      <!-- Keypad -->
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:300px; margin:0 auto;">
+        <button class="pin-key" onclick="pinInput(1)">1</button>
+        <button class="pin-key" onclick="pinInput(2)">2</button>
+        <button class="pin-key" onclick="pinInput(3)">3</button>
+        <button class="pin-key" onclick="pinInput(4)">4</button>
+        <button class="pin-key" onclick="pinInput(5)">5</button>
+        <button class="pin-key" onclick="pinInput(6)">6</button>
+        <button class="pin-key" onclick="pinInput(7)">7</button>
+        <button class="pin-key" onclick="pinInput(8)">8</button>
+        <button class="pin-key" onclick="pinInput(9)">9</button>
+        <div></div>
+        <button class="pin-key" onclick="pinInput(0)">0</button>
+        <button class="pin-key pin-del" onclick="pinDelete()">⌫</button>
+      </div>
+
+      <!-- Error / confirm message -->
+      <div id="pinMessage" style="
+        text-align:center; font-size:13px; margin-top:16px;
+        min-height:20px; font-weight:600; color:#ef4444;"></div>
+
+      <!-- New password change notification -->
+      <div id="pinChangeNotice" style="display:none;
+        background:#fef3c7; border:1px solid #fcd34d; border-radius:10px;
+        padding:10px 14px; margin-top:12px; text-align:center;">
+        <div style="font-size:12px; color:#92400e; font-weight:600;">⚠️ PIN Changed!</div>
+        <div style="font-size:11px; color:#b45309; margin-top:3px;" id="pinChangeText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SNACKBAR -->
+  <div class="snackbar" id="snackbar"></div>
+
+  <!-- ===================== SCRIPTS ===================== -->
+  <script src="config.js"></script>
+  <script src="theme.js"></script>
+
+  <script>
+  /* ==========================================
+     MULTI-LANGUAGE STRINGS
+     ========================================== */
+  const STRINGS = {
+    en: {
+      pageHeading: "Settings",
+      lblGeneral: "General",
+      lblLanguage: "Language",
+      lblChooseLang: "Choose your preferred language",
+      lblNotifSection: "Notifications",
+      lblSecuritySection: "Security",
+      lblPersonalTitle: "Personal Notification",
+      lblResultTitle: "Result Notification",
+      lblLockTitle: "App Lock (Calculator)",
+      on: "ON",
+      off: "OFF",
+
+      descPersonalON:
+        "🟢 Personal notifications are ON.\n" +
+        "You will receive alerts when:\n" +
+        "• 💰 Points are added to your account\n" +
+        "• 🏆 Winning amount is credited\n" +
+        "• 🚨 Emergency alerts from Admin",
+      descPersonalOFF:
+        "🔴 Personal notifications are OFF.\n" +
+        "You will NOT receive any personal alerts.\n" +
+        "Turn ON to stay updated with your account activity.",
+
+      descResultON:
+        "🟢 Result notifications are ON.\n" +
+        "You will receive game result alerts like:\n" +
+        "• 🎯 Market name (e.g. KALYAN)\n" +
+        "• 📊 Result number (e.g. 123-66-123)\n" +
+        "• ✅ Instantly after result declaration",
+      descResultOFF:
+        "🔴 Result notifications are OFF.\n" +
+        "You will NOT receive game results on your device.\n" +
+        "Turn ON to get live result updates.",
+
+      descLockON:
+        "🔒 App Lock is ENABLED.\n" +
+        "Your app is protected with a Calculator Screen.",
+      descLockOFF:
+        "🔓 App Lock is DISABLED.\n" +
+        "Anyone can open the app directly.\n" +
+        "Enable this to protect your app with a secret password via calculator.",
+
+      calcStep1: "When App Lock is ON, the app opens as a Calculator screen.",
+      calcStep2: "Enter your secret numeric password using the calculator buttons.",
+      calcStep3: "Press the  =  (equals) button to unlock.",
+      calcStep4: "✅ Correct password → Redirected to Home. ❌ Wrong password → Shows normal calculation result.",
+
+      calcCorrectLabel: "→ Home Page 🏠",
+      calcWrongLabel: "→ Shows Result",
+
+      notifPTitle: "Admin",
+      notifPMsg: "Points Added Successfully ✅",
+      notifRTitle: "KALYAN",
+      notifRMsg: "123-66-123 🎰",
+
+      saved: "Settings saved!",
+    },
+
+    hi: {
+      pageHeading: "सेटिंग्स",
+      lblGeneral: "सामान्य",
+      lblLanguage: "भाषा",
+      lblChooseLang: "अपनी पसंदीदा भाषा चुनें",
+      lblNotifSection: "सूचनाएं",
+      lblSecuritySection: "सुरक्षा",
+      lblPersonalTitle: "व्यक्तिगत सूचना",
+      lblResultTitle: "रिजल्ट सूचना",
+      lblLockTitle: "ऐप लॉक (कैलकुलेटर)",
+      on: "चालू",
+      off: "बंद",
+
+      descPersonalON:
+        "🟢 व्यक्तिगत सूचनाएं चालू हैं।\n" +
+        "आपको सूचना मिलेगी जब:\n" +
+        "• 💰 आपके खाते में पॉइंट्स जुड़ेंगे\n" +
+        "• 🏆 जीती हुई राशि मिलेगी\n" +
+        "• 🚨 एडमिन की जरूरी सूचनाएं",
+      descPersonalOFF:
+        "🔴 व्यक्तिगत सूचनाएं बंद हैं।\n" +
+        "आपको कोई व्यक्तिगत अलर्ट नहीं मिलेगा।\n" +
+        "खाते की गतिविधि जानने के लिए चालू करें।",
+
+      descResultON:
+        "🟢 रिजल्ट सूचनाएं चालू हैं।\n" +
+        "आपको गेम रिजल्ट मिलेंगे जैसे:\n" +
+        "• 🎯 मार्केट का नाम (जैसे KALYAN)\n" +
+        "• 📊 रिजल्ट नंबर (जैसे 123-66-123)\n" +
+        "• ✅ रिजल्ट घोषित होते ही",
+      descResultOFF:
+        "🔴 रिजल्ट सूचनाएं बंद हैं।\n" +
+        "गेम रिजल्ट की सूचना नहीं मिलेगी।\n" +
+        "लाइव अपडेट के लिए चालू करें।",
+
+      descLockON:
+        "🔒 ऐप लॉक सक्रिय है।\n" +
+        "आपका ऐप कैलकुलेटर स्क्रीन से सुरक्षित है।",
+      descLockOFF:
+        "🔓 ऐप लॉक बंद है।\n" +
+        "कोई भी ऐप सीधे खोल सकता है।\n" +
+        "सुरक्षा के लिए कैलकुलेटर पासवर्ड लॉक चालू करें।",
+
+      calcStep1: "जब ऐप लॉक चालू हो, ऐप खुलने पर कैलकुलेटर स्क्रीन दिखेगी।",
+      calcStep2: "कैलकुलेटर बटन से अपना गुप्त नंबर पासवर्ड डालें।",
+      calcStep3: "= (बराबर) बटन दबाएं।",
+      calcStep4: "✅ सही पासवर्ड → होम पेज पर जाएं। ❌ गलत पासवर्ड → सामान्य कैलकुलेशन दिखेगा।",
+
+      calcCorrectLabel: "→ होम पेज 🏠",
+      calcWrongLabel: "→ रिजल्ट दिखाता है",
+
+      notifPTitle: "Admin",
+      notifPMsg: "पॉइंट्स सफलतापूर्वक जोड़े गए ✅",
+      notifRTitle: "KALYAN",
+      notifRMsg: "123-66-123 🎰",
+
+      saved: "सेटिंग्स सहेजी गईं!",
+    },
+
+    te: {
+      pageHeading: "సెట్టింగులు",
+      lblGeneral: "సాధారణం",
+      lblLanguage: "భాష",
+      lblChooseLang: "మీకు నచ్చిన భాష ఎంచుకోండి",
+      lblNotifSection: "నోటిఫికేషన్లు",
+      lblSecuritySection: "భద్రత",
+      lblPersonalTitle: "వ్యక్తిగత నోటిఫికేషన్",
+      lblResultTitle: "రిజల్ట్ నోటిఫికేషన్",
+      lblLockTitle: "యాప్ లాక్ (కాల్క్యులేటర్)",
+      on: "ఆన్",
+      off: "ఆఫ్",
+
+      descPersonalON:
+        "🟢 వ్యక్తిగత నోటిఫికేషన్లు చురుగ్గా ఉన్నాయి.\n" +
+        "మీకు అలర్ట్ వస్తుంది:\n" +
+        "• 💰 పాయింట్లు జమ అయినప్పుడు\n" +
+        "• 🏆 గెలుపు మొత్తం వచ్చినప్పుడు\n" +
+        "• 🚨 యాడ్మిన్ అత్యవసర సందేశాలు",
+      descPersonalOFF:
+        "🔴 వ్యక్తిగత నోటిఫికేషన్లు ఆఫ్ చేయబడ్డాయి.\n" +
+        "ఏ వ్యక్తిగత అలర్ట్ రాదు.\n" +
+        "అప్‌డేట్‌లు పొందడానికి ఆన్ చేయండి.",
+
+      descResultON:
+        "🟢 రిజల్ట్ నోటిఫికేషన్లు ఆన్ ఉన్నాయి.\n" +
+        "గేమ్ రిజల్ట్ అలర్ట్ వస్తుంది:\n" +
+        "• 🎯 మార్కెట్ పేరు (ఉదా: KALYAN)\n" +
+        "• 📊 రిజల్ట్ నంబర్ (ఉదా: 123-66-123)\n" +
+        "• ✅ రిజల్ట్ వెంటనే",
+      descResultOFF:
+        "🔴 రిజల్ట్ నోటిఫికేషన్లు ఆఫ్ చేయబడ్డాయి.\n" +
+        "గేమ్ ఫలితాలు అందవు.\n" +
+        "లైవ్ అప్‌డేట్‌లకు ఆన్ చేయండి.",
+
+      descLockON:
+        "🔒 యాప్ లాక్ సక్రియంగా ఉంది.\n" +
+        "కాల్క్యులేటర్ స్క్రీన్ ద్వారా రక్షితం.",
+      descLockOFF:
+        "🔓 యాప్ లాక్ ఆఫ్ ఉంది.\n" +
+        "ఎవరైనా నేరుగా తెరవగలరు.\n" +
+        "రహస్య పాస్‌వర్డ్ లాక్ ఎనేబుల్ చేయండి.",
+
+      calcStep1: "యాప్ లాక్ ఆన్ అయినప్పుడు, యాప్ తెరుచుకోగానే కాల్క్యులేటర్ కనిపిస్తుంది.",
+      calcStep2: "కాల్క్యులేటర్ బటన్లతో మీ రహస్య సంఖ్య పాస్‌వర్డ్ నమోదు చేయండి.",
+      calcStep3: "= (సమాన) బటన్ నొక్కండి.",
+      calcStep4: "✅ సరైన పాస్‌వర్డ్ → హోమ్ పేజ్‌కి వెళ్తారు. ❌ తప్పు పాస్‌వర్డ్ → సాధారణ లెక్క చూపిస్తుంది.",
+
+      calcCorrectLabel: "→ హోమ్ పేజ్ 🏠",
+      calcWrongLabel: "→ ఫలితం చూపిస్తుంది",
+
+      notifPTitle: "Admin",
+      notifPMsg: "పాయింట్లు విజయవంతంగా జమ అయ్యాయి ✅",
+      notifRTitle: "KALYAN",
+      notifRMsg: "123-66-123 🎰",
+
+      saved: "సెట్టింగులు సేవ్ అయ్యాయి!",
+    },
+
+    kn: {
+      pageHeading: "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+      lblGeneral: "ಸಾಮಾನ್ಯ",
+      lblLanguage: "ಭಾಷೆ",
+      lblChooseLang: "ನಿಮ್ಮ ಆದ್ಯತೆಯ ಭಾಷೆ ಆಯ್ಕೆ ಮಾಡಿ",
+      lblNotifSection: "ಅಧಿಸೂಚನೆಗಳು",
+      lblSecuritySection: "ಭದ್ರತೆ",
+      lblPersonalTitle: "ವೈಯಕ್ತಿಕ ಅಧಿಸೂಚನೆ",
+      lblResultTitle: "ಫಲಿತಾಂಶ ಅಧಿಸೂಚನೆ",
+      lblLockTitle: "ಅಪ್ಲಿಕೇಶನ್ ಲಾಕ್ (ಕ್ಯಾಲ್ಕ್ಯುಲೇಟರ್)",
+      on: "ಆನ್",
+      off: "ಆಫ್",
+
+      descPersonalON:
+        "🟢 ವೈಯಕ್ತಿಕ ಅಧಿಸೂಚನೆಗಳು ಸಕ್ರಿಯ.\n" +
+        "ನಿಮಗೆ ಅಲರ್ಟ್ ಬರುತ್ತದೆ:\n" +
+        "• 💰 ಪಾಯಿಂಟ್ಗಳು ಸೇರಿದಾಗ\n" +
+        "• 🏆 ಗೆಲ್ಲುವ ಮೊತ್ತ ಜಮೆಯಾದಾಗ\n" +
+        "• 🚨 ಅಡ್ಮಿನ್‌ನ ತುರ್ತು ಸಂದೇಶಗಳು",
+      descPersonalOFF:
+        "🔴 ವೈಯಕ್ತಿಕ ಅಧಿಸೂಚನೆಗಳು ಆಫ್.\n" +
+        "ಯಾವುದೇ ವೈಯಕ್ತಿಕ ಅಲರ್ಟ್ ಬರುವುದಿಲ್ಲ.\n" +
+        "ಅಪ್‌ಡೇಟ್ ಪಡೆಯಲು ಆನ್ ಮಾಡಿ.",
+
+      descResultON:
+        "🟢 ಫಲಿತಾಂಶ ಅಧಿಸೂಚನೆಗಳು ಆನ್.\n" +
+        "ಆಟದ ಫಲಿತಾಂಶ ಅಲರ್ಟ್ ಸಿಗುತ್ತದೆ:\n" +
+        "• 🎯 ಮಾರ್ಕೆಟ್ ಹೆಸರು (ಉದಾ: KALYAN)\n" +
+        "• 📊 ರಿಸಲ್ಟ್ ನಂಬರ್ (ಉದಾ: 123-66-123)\n" +
+        "• ✅ ತಕ್ಷಣ ಅಧಿಸೂಚನೆ",
+      descResultOFF:
+        "🔴 ಫಲಿತಾಂಶ ಅಧಿಸೂಚನೆಗಳು ಆಫ್.\n" +
+        "ಆಟದ ಫಲಿತಾಂಶ ಸಿಗುವುದಿಲ್ಲ.\n" +
+        "ಲೈವ್ ಅಪ್‌ಡೇಟ್‌ಗೆ ಆನ್ ಮಾಡಿ.",
+
+      descLockON:
+        "🔒 ಅಪ್ಲಿಕೇಶನ್ ಲಾಕ್ ಸಕ್ರಿಯ.\n" +
+        "ಕ್ಯಾಲ್ಕ್ಯುಲೇಟರ್ ಮೂಲಕ ರಕ್ಷಿಸಲಾಗಿದೆ.",
+      descLockOFF:
+        "🔓 ಅಪ್ಲಿಕೇಶನ್ ಲಾಕ್ ಆಫ್.\n" +
+        "ಯಾರಾದರೂ ನೇರವಾಗಿ ತೆರೆಯಬಹುದು.\n" +
+        "ರಹಸ್ಯ ಪಾಸ್‌ವರ್ಡ್ ಲಾಕ್ ಸಕ್ರಿಯಗೊಳಿಸಿ.",
+
+      calcStep1: "ಅಪ್ ಲಾಕ್ ಆನ್ ಆದಾಗ, ಅಪ್ ತೆರೆದಾಗ ಕ್ಯಾಲ್ಕ್ಯುಲೇಟರ್ ಸ್ಕ್ರೀನ್ ಕಾಣಿಸುತ್ತದೆ.",
+      calcStep2: "ಕ್ಯಾಲ್ಕ್ಯುಲೇಟರ್ ಬಟನ್‌ಗಳಿಂದ ನಿಮ್ಮ ರಹಸ್ಯ ಸಂಖ್ಯೆಯ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.",
+      calcStep3: "= (ಸಮಾನ) ಬಟನ್ ಒತ್ತಿರಿ.",
+      calcStep4: "✅ ಸರಿಯಾದ ಪಾಸ್‌ವರ್ಡ್ → ಹೋಮ್ ಪೇಜ್‌ಗೆ ಹೋಗುತ್ತೀರಿ. ❌ ತಪ್ಪಾದ ಪಾಸ್‌ವರ್ಡ್ → ಸಾಮಾನ್ಯ ಲೆಕ್ಕ ತೋರಿಸುತ್ತದೆ.",
+
+      calcCorrectLabel: "→ ಹೋಮ್ ಪೇಜ್ 🏠",
+      calcWrongLabel: "→ ಫಲಿತಾಂಶ ತೋರಿಸುತ್ತದೆ",
+
+      notifPTitle: "Admin",
+      notifPMsg: "ಪಾಯಿಂಟ್‌ಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ ✅",
+      notifRTitle: "KALYAN",
+      notifRMsg: "123-66-123 🎰",
+
+      saved: "ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ!",
+    },
+
+    mr: {
+      pageHeading: "सेटिंग्ज",
+      lblGeneral: "सामान्य",
+      lblLanguage: "भाषा",
+      lblChooseLang: "आपली आवडती भाषा निवडा",
+      lblNotifSection: "सूचना",
+      lblSecuritySection: "सुरक्षा",
+      lblPersonalTitle: "वैयक्तिक सूचना",
+      lblResultTitle: "निकाल सूचना",
+      lblLockTitle: "App Lock (Calculator)",
+      on: "चालू",
+      off: "बंद",
+
+      descPersonalON:
+        "🟢 वैयक्तिक सूचना चालू आहेत.\n" +
+        "तुम्हाला अलर्ट मिळेल जेव्हा:\n" +
+        "• 💰 पॉइंट्स खात्यात जोडले जातील\n" +
+        "• 🏆 जिंकलेली रक्कम जमा होईल\n" +
+        "• 🚨 ॲडमिनचे आपत्कालीन संदेश",
+      descPersonalOFF:
+        "🔴 वैयक्तिक सूचना बंद आहेत.\n" +
+        "कोणतेही वैयक्तिक अलर्ट मिळणार नाहीत.\n" +
+        "खाते अपडेट जाणून घेण्यासाठी चालू करा.",
+
+      descResultON:
+        "🟢 निकाल सूचना चालू आहेत.\n" +
+        "गेम निकाल अलर्ट मिळतील:\n" +
+        "• 🎯 मार्केट नाव (उदा: KALYAN)\n" +
+        "• 📊 निकाल क्रमांक (उदा: 123-66-123)\n" +
+        "• ✅ निकाल जाहीर होताच",
+      descResultOFF:
+        "🔴 निकाल सूचना बंद आहेत.\n" +
+        "गेम निकाल सूचना मिळणार नाहीत.\n" +
+        "लाइव्ह अपडेटसाठी चालू करा.",
+
+      descLockON:
+        "🔒 App Lock सक्रिय आहे.\n" +
+        "Calculator Screen ने संरक्षित.",
+      descLockOFF:
+        "🔓 App Lock बंद आहे.\n" +
+        "कोणीही थेट उघडू शकतो.\n" +
+        "गुप्त Password Lock सक्रिय करा.",
+
+      calcStep1: "App Lock चालू असेल तर, App उघडताना Calculator Screen दिसेल.",
+      calcStep2: "Calculator च्या बटणांनी गुप्त नंबर Password टाका.",
+      calcStep3: "= (बरोबर) बटण दाबा.",
+      calcStep4: "✅ बरोबर पासवर्ड → होम पेजवर जाल. ❌ चुकीचा पासवर्ड → साधी गणना दाखवेल.",
+
+      calcCorrectLabel: "→ होम पेज 🏠",
+      calcWrongLabel: "→ निकाल दाखवतो",
+
+      notifPTitle: "Admin",
+      notifPMsg: "पॉइंट्स यशस्वीरित्या जोडले ✅",
+      notifRTitle: "KALYAN",
+      notifRMsg: "123-66-123 🎰",
+
+      saved: "सेटिंग्ज जतन केल्या!",
+    },
+
+    ta: {
+      pageHeading: "அமைப்புகள்",
+      lblGeneral: "பொது",
+      lblLanguage: "மொழி",
+      lblChooseLang: "உங்கள் விருப்பமான மொழியை தேர்வு செய்யுங்கள்",
+      lblNotifSection: "அறிவிப்புகள்",
+      lblSecuritySection: "பாதுகாப்பு",
+      lblPersonalTitle: "தனிப்பட்ட அறிவிப்பு",
+      lblResultTitle: "முடிவு அறிவிப்பு",
+      lblLockTitle: "செயலி பூட்டு (கால்குலேட்டர்)",
+      on: "இயக்கு",
+      off: "நிறுத்து",
+
+      descPersonalON:
+        "🟢 தனிப்பட்ட அறிவிப்புகள் இயக்கத்தில் உள்ளன.\n" +
+        "பின்வரும் நேரங்களில் எச்சரிக்கை வரும்:\n" +
+        "• 💰 புள்ளிகள் சேர்க்கப்படும்போது\n" +
+        "• 🏆 வெற்றி தொகை வரவு வரும்போது\n" +
+        "• 🚨 நிர்வாகியின் அவசர செய்திகள்",
+      descPersonalOFF:
+        "🔴 தனிப்பட்ட அறிவிப்புகள் நிறுத்தப்பட்டுள்ளன.\n" +
+        "எந்த தனிப்பட்ட எச்சரிக்கையும் வராது.\n" +
+        "கணக்கு அப்டேட் பெற இயக்குங்கள்.",
+
+      descResultON:
+        "🟢 முடிவு அறிவிப்புகள் இயக்கத்தில் உள்ளன.\n" +
+        "விளையாட்டு முடிவு எச்சரிக்கை வரும்:\n" +
+        "• 🎯 சந்தை பெயர் (எ.கா: KALYAN)\n" +
+        "• 📊 முடிவு எண் (எ.கா: 123-66-123)\n" +
+        "• ✅ உடனடியாக",
+      descResultOFF:
+        "🔴 முடிவு அறிவிப்புகள் நிறுத்தப்பட்டுள்ளன.\n" +
+        "விளையாட்டு முடிவுகள் வராது.\n" +
+        "நேரடி புதுப்பிப்புகளுக்கு இயக்குங்கள்.",
+
+      descLockON:
+        "🔒 செயலி பூட்டு இயக்கத்தில் உள்ளது.\n" +
+        "கால்குலேட்டர் திரை மூலம் பாதுகாக்கப்பட்டது.",
+      descLockOFF:
+        "🔓 செயலி பூட்டு நிறுத்தப்பட்டுள்ளது.\n" +
+        "யாரும் நேரடியாக திறக்கலாம்.\n" +
+        "ரகசிய கடவுச்சொல் பூட்டை இயக்குங்கள்.",
+
+      calcStep1: "செயலி பூட்டு இயக்கத்தில் இருக்கும்போது, செயலி திறக்கும்போது கால்குலேட்டர் தோன்றும்.",
+      calcStep2: "கால்குலேட்டர் பொத்தான்கள் மூலம் உங்கள் ரகசிய எண் கடவுச்சொல்லை உள்ளிடுங்கள்.",
+      calcStep3: "= (சமம்) பொத்தானை அழுத்துங்கள்.",
+      calcStep4: "✅ சரியான கடவுச்சொல் → முகப்பு பக்கத்திற்கு செல்லுங்கள். ❌ தவறான கடவுச்சொல் → சாதாரண கணக்கீடு காட்டும்.",
+
+      calcCorrectLabel: "→ முகப்பு பக்கம் 🏠",
+      calcWrongLabel: "→ முடிவு காட்டுகிறது",
+
+      notifPTitle: "Admin",
+      notifPMsg: "புள்ளிகள் வெற்றிகரமாக சேர்க்கப்பட்டன ✅",
+      notifRTitle: "KALYAN",
+      notifRMsg: "123-66-123 🎰",
+
+      saved: "அமைப்புகள் சேமிக்கப்பட்டன!",
+    }
+  };
+
+  /* ==========================================
+     STATE
+     ========================================== */
+  let currentLang = localStorage.getItem("lang") || "en";
+  // Defaults: personal=ON, result=ON, lock=OFF (first time only)
+  if (localStorage.getItem("personal") === null) localStorage.setItem("personal", "true");
+  if (localStorage.getItem("result")   === null) localStorage.setItem("result",   "true");
+  if (localStorage.getItem("lock")     === null) localStorage.setItem("lock",     "false");
+  let personalOn  = localStorage.getItem("personal") === "true";
+  let resultOn    = localStorage.getItem("result")   === "true";
+  let lockOn      = localStorage.getItem("lock")     === "true";
+
+  /* ==========================================
+     APPLY THEME FROM config.js
+     ========================================== */
+  function applyDynamicTheme() {
+    const cfg = window.AppConfig;
+    if (!cfg) return;
+
+    // Header gradient
+    const header = document.getElementById("settings-header");
+    if (cfg.useGradient) {
+      header.style.background = `linear-gradient(135deg, ${cfg.mainColor1}, ${cfg.mainColor2})`;
+    } else {
+      header.style.background = cfg.mainColor1 || "hsl(231, 97%, 40%)";
+    }
+
+    // Section labels color
+    document.querySelectorAll('.section-label').forEach(el => {
+      el.style.color = cfg.mainColor1;
+    });
+
+    // Lang select border color
+    const sel = document.getElementById("langSelect");
+    sel.style.borderColor = cfg.mainColor1;
+    sel.style.color = cfg.mainColor1;
+
+    // Step number circles
+    document.querySelectorAll(".step-num-colored").forEach(el => {
+      el.style.background = cfg.mainColor1;
+    });
+
+    // Logo
+    const logo = document.getElementById("app-logo");
+    if (logo && cfg.logoUrl) logo.src = cfg.logoUrl;
+
+    // Notification preview logos
+    document.getElementById("notif-logo-personal").src = cfg.logoUrl || "assets/logo.png";
+    document.getElementById("notif-logo-result").src = cfg.logoUrl || "assets/logo.png";
+
+    // App name in notification preview
+    const appName = cfg.appName || "BOSS 95";
+    document.getElementById("app-name-personal").textContent = appName.toUpperCase();
+    document.getElementById("app-name-result").textContent = appName.toUpperCase();
+
+    // Body background from config / theme
+    if (cfg.backgroundSVG && cfg.backgroundSVG.useSVG) {
+      document.body.style.backgroundImage = `url('${cfg.backgroundSVG.svgPath}')`;
+      document.body.style.backgroundRepeat = "no-repeat";
+      document.body.style.backgroundPosition = "center";
+      document.body.style.backgroundSize = "cover";
+    } else if (cfg.useGradient) {
+      document.body.style.background = `linear-gradient(135deg, ${cfg.mainColor1}, ${cfg.mainColor2})`;
+    } else {
+      document.body.style.background = cfg.backgroundColor || "#f4f6fb";
+    }
+
+    // Card background = white (matches home.html cards)
+    // Setting cards already white
+  }
+
+  /* ==========================================
+     APPLY LANGUAGE
+     ========================================== */
+  function applyLanguage(lang) {
+    const s = STRINGS[lang] || STRINGS["en"];
+
+    document.getElementById("page-heading").textContent      = s.pageHeading;
+    document.getElementById("lbl-general").textContent       = s.lblGeneral;
+    document.getElementById("lbl-language").textContent      = s.lblLanguage;
+    document.getElementById("lbl-choose-lang").textContent   = s.lblChooseLang;
+    document.getElementById("lbl-notif-section").textContent = s.lblNotifSection;
+    document.getElementById("lbl-security-section").textContent = s.lblSecuritySection;
+    document.getElementById("lbl-personal-title").textContent = s.lblPersonalTitle;
+    document.getElementById("lbl-result-title").textContent  = s.lblResultTitle;
+    document.getElementById("lbl-lock-title").textContent    = s.lblLockTitle;
+
+    // Notification preview content
+    document.getElementById("lbl-notif-p-title").textContent = s.notifPTitle;
+    document.getElementById("lbl-notif-p-msg").textContent   = s.notifPMsg;
+    document.getElementById("lbl-notif-r-title").textContent = s.notifRTitle;
+    document.getElementById("lbl-notif-r-msg").textContent   = s.notifRMsg;
+
+    // Calculator labels
+    document.getElementById("calc-step1").textContent        = s.calcStep1;
+    document.getElementById("calc-step2").textContent        = s.calcStep2;
+    document.getElementById("calc-step3").textContent        = s.calcStep3;
+    document.getElementById("calc-step4").textContent        = s.calcStep4;
+    document.getElementById("calc-correct-label").textContent = s.calcCorrectLabel;
+    document.getElementById("calc-wrong-label").textContent  = s.calcWrongLabel;
+
+    // Update descriptions
+    updateDescription("personal", personalOn);
+    updateDescription("result", resultOn);
+    updateDescription("lock", lockOn);
+    updateStatusText("personal", personalOn);
+    updateStatusText("result", resultOn);
+    updateStatusText("lock", lockOn);
+  }
+
+  function updateDescription(key, isOn) {
+    const s = STRINGS[currentLang] || STRINGS["en"];
+    const el = document.getElementById(`desc-${key}`);
+    if (!el) return;
+    let text = "";
+    if (key === "personal") text = isOn ? s.descPersonalON : s.descPersonalOFF;
+    if (key === "result")   text = isOn ? s.descResultON   : s.descResultOFF;
+    if (key === "lock")     text = isOn ? s.descLockON     : s.descLockOFF;
+    // Convert \n to line breaks
+    el.innerHTML = text.replace(/\n/g, "<br/>");
+  }
+
+  function updateStatusText(key, isOn) {
+    const s = STRINGS[currentLang] || STRINGS["en"];
+    const el = document.getElementById(`${key}-status-txt`);
+    if (!el) return;
+    el.textContent = isOn ? s.on : s.off;
+    el.style.color = isOn ? "#22c55e" : "#ef4444";
+  }
+
+  /* ==========================================
+     EVENTS
+     ========================================== */
+  function onLangChange(lang) {
+    currentLang = lang;
+    localStorage.setItem("lang", lang);
+    applyLanguage(lang);
+    showSnackbar(STRINGS[lang]?.saved || "Saved!");
+  }
+
+  function onToggle(key, val) {
+    localStorage.setItem(key, val ? "true" : "false");
+    if (key === "personal") {
+      personalOn = val;
+      console.log(val ? "Personal Notification is ON" : "Personal Notification is OFF");
+    }
+    if (key === "result") {
+      resultOn = val;
+      console.log(val ? "Result Notification is ON" : "Result Notification is OFF");
+    }
+    if (key === "lock") lockOn = val;
+    updateDescription(key, val);
+    updateStatusText(key, val);
+  }
+
+  /* ==========================================
+     PIN MODAL LOGIC
+     ========================================== */
+  let pinStep      = 1;   // 1=enter new, 2=confirm new
+  let pinFirst     = "";  // first entry
+  let pinCurrent   = "";  // digits being typed
+  let pendingLockOn = false;
+
+  function onLockToggleRequest(val) {
+    if (val) {
+      // User turned ON — open PIN modal
+      pendingLockOn = true;
+      openPinModal();
+    } else {
+      // User turned OFF — just save directly
+      onToggle("lock", false);
+      // revert toggle UI via onToggle's updateStatusText
+    }
+  }
+
+  function openPinModal() {
+    const overlay = document.getElementById("pinOverlay");
+    const cfg = window.AppConfig;
+    const color = cfg ? cfg.mainColor1 : "#3b82f6";
+    overlay.style.setProperty("--pin-color", color);
+
+    // Check old PIN
+    const oldPin = localStorage.getItem("calci_password") || "";
+    pinStep    = 1;
+    pinFirst   = "";
+    pinCurrent = "";
+    clearDots();
+    document.getElementById("pinMessage").textContent      = "";
+    document.getElementById("pinChangeNotice").style.display = "none";
+
+    if (oldPin && oldPin.length === 4) {
+      document.getElementById("oldPinBanner").style.display = "block";
+      document.getElementById("oldPinMask").textContent     = "••••";
+      document.getElementById("pinTitle").textContent       = "Update App Lock PIN";
+      document.getElementById("pinSubtitle").textContent    = "Enter a new 4-digit PIN or keep your old one";
+      document.getElementById("pinStepLabel").textContent   = "Step 1 of 2 — Enter new PIN";
+    } else {
+      document.getElementById("oldPinBanner").style.display = "none";
+      document.getElementById("pinTitle").textContent       = "Set App Lock PIN";
+      document.getElementById("pinSubtitle").textContent    = "Choose a secure 4-digit PIN";
+      document.getElementById("pinStepLabel").textContent   = "Step 1 of 2 — Enter PIN";
+    }
+
+    // Tint dot color
+    document.querySelectorAll(".pin-dot").forEach(d => {
+      d.style.setProperty("--pin-color", color);
+    });
+    document.querySelectorAll(".pin-key:not(.pin-del)").forEach(b => {
+      b.onmouseover = () => b.style.background = color + "22";
+      b.onmouseout  = () => b.style.background = "#f4f6fb";
+    });
+
+    overlay.classList.add("active");
+  }
+
+  function closePinModal() {
+    const sheet = document.getElementById("pinSheet");
+    sheet.style.transform = "translate(-50%, -50%) scale(0.85)";
+    sheet.style.opacity = "0";
+    setTimeout(() => {
+      document.getElementById("pinOverlay").classList.remove("active");
+      sheet.style.transform = "";
+      sheet.style.opacity   = "";
+    }, 300);
+    // Revert toggle if user cancels without confirming
+    const toggleEl = document.getElementById("toggleLock");
+    toggleEl.checked = lockOn; // restore to previous state
+  }
+
+  function pinInput(digit) {
+    if (pinCurrent.length >= 4) return;
+    pinCurrent += digit;
+    fillDots(pinCurrent.length);
+
+    // Hide old pin banner as soon as user starts typing
+    if (pinCurrent.length === 1) {
+      document.getElementById("oldPinBanner").style.display = "none";
+    }
+
+    if (pinCurrent.length === 4) {
+      setTimeout(() => handleFourDigits(), 200);
+    }
+  }
+
+  function pinDelete() {
+    if (pinCurrent.length === 0) return;
+    pinCurrent = pinCurrent.slice(0, -1);
+    fillDots(pinCurrent.length);
+    document.getElementById("pinMessage").textContent = "";
+  }
+
+  function handleFourDigits() {
+    if (pinStep === 1) {
+      // Move to confirmation step
+      pinFirst   = pinCurrent;
+      pinCurrent = "";
+      pinStep    = 2;
+      clearDots();
+      document.getElementById("pinStepLabel").textContent = "Step 2 of 2 — Re-enter PIN to confirm";
+      document.getElementById("pinMessage").textContent   = "";
+      document.getElementById("pinTitle").textContent     = "Confirm your PIN";
+      document.getElementById("pinSubtitle").textContent  = "Re-enter the same PIN again";
+    } else {
+      // Step 2 — confirm
+      if (pinCurrent === pinFirst) {
+        confirmPin(pinCurrent);
+      } else {
+        // Mismatch
+        shakeAndReset("PINs do not match! Try again.");
+      }
+    }
+  }
+
+  function confirmPin(newPin) {
+    const oldPin = localStorage.getItem("calci_password") || "";
+    const dots = document.querySelectorAll(".pin-dot");
+    dots.forEach(d => d.classList.add("success"));
+
+    if (oldPin && oldPin !== newPin) {
+      // Show change notice
+      const notice = document.getElementById("pinChangeNotice");
+      notice.style.display = "block";
+      document.getElementById("pinChangeText").textContent =
+        "Old PIN: ••••  →  New PIN: ••••  (saved successfully)";
+    }
+
+    localStorage.setItem("calci_password", newPin);
+    localStorage.setItem("lock", "true");
+    lockOn = true;
+
+    document.getElementById("pinMessage").style.color = "#22c55e";
+    document.getElementById("pinMessage").textContent = "✅ PIN saved! App Lock is now ON.";
+    document.getElementById("toggleLock").checked = true;
+    updateDescription("lock", true);
+    updateStatusText("lock", true);
+
+    setTimeout(() => closePinModal(), 1200);
+    showSnackbar("App Lock enabled!");
+  }
+
+  function shakeAndReset(msg) {
+    const dots = document.querySelectorAll(".pin-dot");
+    dots.forEach(d => { d.classList.remove("filled"); d.classList.add("error"); });
+    document.getElementById("pinMessage").style.color = "#ef4444";
+    document.getElementById("pinMessage").textContent = msg;
+    setTimeout(() => {
+      dots.forEach(d => d.classList.remove("error"));
+      pinCurrent = "";
+      pinStep    = 2; // stay on confirm step
+      fillDots(0);
+    }, 700);
+  }
+
+  function useOldPin() {
+    const oldPin = localStorage.getItem("calci_password") || "";
+    if (!oldPin || oldPin.length !== 4) return;
+    confirmPin(oldPin);
+  }
+
+  function fillDots(count) {
+    for (let i = 0; i < 4; i++) {
+      const d = document.getElementById("dot" + i);
+      d.classList.remove("filled", "error", "success");
+      if (i < count) d.classList.add("filled");
+    }
+  }
+
+  function clearDots() { fillDots(0); }
+
+  /* ==========================================
+     SNACKBAR
+     ========================================== */
+  function showSnackbar(msg) {
+    const sb = document.getElementById("snackbar");
+    sb.textContent = msg;
+    sb.classList.add("show");
+    setTimeout(() => sb.classList.remove("show"), 2200);
+  }
+
+  /* ==========================================
+     INIT
+     ========================================== */
+  document.addEventListener("DOMContentLoaded", function () {
+    applyDynamicTheme();
+
+    // Restore saved state
+    document.getElementById("langSelect").value   = currentLang;
+    document.getElementById("togglePersonal").checked = personalOn;
+    document.getElementById("toggleResult").checked   = resultOn;
+    document.getElementById("toggleLock").checked     = lockOn;
+
+    applyLanguage(currentLang);
+  });
+  </script>
+
+</body>
+</html>

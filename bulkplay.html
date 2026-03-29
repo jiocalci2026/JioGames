@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Play</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body{
+  font-family:Poppins,sans-serif;
+
+  /* 🔒 IMPORTANT */
+  overflow: hidden;
+
+  /* background handled by theme.js */
+}
+
+.page{
+  height: 100vh;        /* fixed viewport */
+  overflow-y: auto;     /* scroll ONLY here */
+  padding:10px;
+  padding-bottom:120px;
+  box-sizing:border-box;
+}
+.title-bar{
+  padding:12px;
+  border-radius:18px;
+  text-align:center;
+  font-weight:600;
+  margin-bottom:10px;
+}
+.section-title{
+  margin:10px 0 6px;
+  font-size:.85rem;
+  font-weight:600;
+  text-align:center;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:8px;
+  margin-bottom:12px;
+}
+.card{
+  padding:12px 0;
+  border-radius:12px;
+  text-align:center;
+  font-weight:bold;
+  cursor:pointer;
+  background:#fff;
+  box-shadow:0 2px 5px rgba(0,0,0,.2);
+}
+.card.sel{
+  background:#099728;
+  color:#fff;
+}
+.amount{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid #ccc;
+  text-align:center;
+  margin-bottom:12px;
+}
+.add-btn{
+  width:100%;
+  padding:14px;
+  margin-bottom:12px;
+  border-radius:30px;
+  font-weight:bold;
+  text-align:center;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+<div id="titleBar" class="title-bar"></div>
+
+<!-- DIGIT SELECTOR -->
+<div id="digitBox">
+  <div class="section-title" id="digitTitle"></div>
+  <div id="digitGrid" class="grid"></div>
+</div>
+
+<div id="digitBox2" style="display:none">
+  <div class="section-title" id="digitTitle2"></div>
+  <div id="digitGrid2" class="grid"></div>
+</div>
+
+<!-- TYPE SELECTOR -->
+<div id="typeBox" style="display:none">
+  <div class="section-title">Select Type</div>
+  <div class="grid">
+    <div class="card" data-type="SP">SP</div>
+    <div class="card" data-type="DP">DP</div>
+    <div class="card" data-type="TP">TP</div>
+  </div>
+</div>
+
+<input id="amount" class="amount" type="number" placeholder="Enter Amount">
+<div id="addBtn" class="add-btn">ADD</div>
+
+<div id="submitter-container"></div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="theme.js"></script>
+<script src="numbers.js"></script>
+<script src="loader.js"></script>
+
+<script>
+const subtype = localStorage.getItem("marketSubtype") || "";
+const market = localStorage.getItem("marketName") || "";
+const mtype  = localStorage.getItem("marketType") || "";
+
+const minEntry = +localStorage.getItem("Entry Min") || 10;
+const range    = +localStorage.getItem("Entry Range") || 10;
+const pts      = +localStorage.getItem("pts") || 0;
+
+const c1 = AppConfig.mainColor1;
+const c2 = AppConfig.mainColor2;
+
+if (!AppConfig.backgroundSVG?.useSVG) {
+  document.body.style.background = AppConfig.useGradient
+    ? `linear-gradient(135deg,${c1},${c2})`
+    : "#f2f2f2";
+}
+
+titleBar.innerText = `${market} • ${mtype} • ${subtype}`;
+titleBar.style.background = "#fff";
+titleBar.style.color = c1;
+addBtn.style.background = `linear-gradient(135deg,${c1},${c2})`;
+addBtn.style.color = "#fff";
+
+/* SELECTION STATE */
+const sel1 = [];
+const sel2 = [];
+const selType = [];
+
+/* DIGIT BUILDER */
+function makeDigits(el, arr, multi=true){
+  el.innerHTML="";
+  for(let i=0;i<10;i++){
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerText=i;
+    d.onclick=()=>{
+      if(!multi){
+        arr.length=0;
+        [...el.children].forEach(c=>c.classList.remove("sel"));
+      }
+      d.classList.toggle("sel");
+      const v=+d.innerText;
+      d.classList.contains("sel")
+        ? arr.push(v)
+        : arr.splice(arr.indexOf(v),1);
+    };
+    el.appendChild(d);
+  }
+}
+
+/* TYPE SELECT */
+document.querySelectorAll("[data-type]").forEach(c=>{
+  c.onclick=()=>{
+    c.classList.toggle("sel");
+    const t=c.dataset.type;
+    c.classList.contains("sel")
+      ? selType.push(t)
+      : selType.splice(selType.indexOf(t),1);
+  };
+});
+
+/* PAGE SETUP */
+if(subtype==="Bulk Jodi"){
+  digitTitle.innerText="Select Start Digit of Jodi";
+  makeDigits(digitGrid,sel1,true);
+}
+else if(subtype==="Cross Jodi"){
+  digitTitle.innerText="Select Starting Numbers";
+  digitTitle2.innerText="Select Ending Numbers";
+  digitBox2.style.display="block";
+  makeDigits(digitGrid,sel1,true);
+  makeDigits(digitGrid2,sel2,true);
+}
+else if(subtype==="Ank SPDPTP"){
+  digitTitle.innerText="Select Atleast 1 Digit";
+  typeBox.style.display="block";
+  makeDigits(digitGrid,sel1,true);
+}
+else if(subtype==="Motor Patti"){
+  digitTitle.innerText="Select Atleast 3 Digits";
+  typeBox.style.display="block";
+  makeDigits(digitGrid,sel1,true);
+}
+else if(subtype==="Cycle Patti"){
+  digitTitle.innerText="Select First Digit";
+  digitTitle2.innerText="Select Last Digit";
+  digitBox2.style.display="block";
+  makeDigits(digitGrid,sel1,false);
+  makeDigits(digitGrid2,sel2,false);
+}
+
+/* ADD BUTTON */
+addBtn.onclick = () => {
+  const amt = +amount.value;
+  if (amt < minEntry || amt % range !== 0) {
+    alert("Invalid Amount");
+    return;
+  }
+
+  let nums = [];
+
+  if(subtype==="Bulk Jodi"){
+    sel1.forEach(d=>{for(let i=0;i<10;i++) nums.push(`${d}${i}`);});
+  }
+
+  else if(subtype==="Cross Jodi"){
+    if(sel1.length<1||sel2.length<1) return alert("Select both sides");
+    sel1.forEach(a=>sel2.forEach(b=>nums.push(`${a}${b}`)));
+  }
+
+  else if(subtype==="Ank SPDPTP"){
+    if(sel1.length<1||selType.length<1) return alert("Select digit & type");
+    sel1.forEach(d=>selType.forEach(t=>nums.push(...NUMBERS[t][d])));
+  }
+
+  else if(subtype==="Motor Patti"){
+    if(sel1.length<3) return alert("Select minimum 3 digits");
+    if(selType.length<1) return alert("Select at least one type");
+
+    const set = new Set(sel1.map(String));
+    selType.forEach(t=>{
+      Object.values(NUMBERS[t]).flat().forEach(p=>{
+        if(p.split("").every(d=>set.has(d))) nums.push(p);
+      });
+    });
+  }
+
+  else if(subtype==="Cycle Patti"){
+    if(sel1.length!==1||sel2.length!==1) return alert("Select both digits");
+    const pair = `${sel1[0]}${sel2[0]}`;
+    ["SP","DP","TP"].forEach(t=>{
+      Object.values(NUMBERS[t]).flat().forEach(p=>{
+        if(p.includes(pair)) nums.push(p);
+      });
+    });
+  }
+
+  const ptsArr = nums.map(()=>amt);
+  initializeSubmitter(nums, ptsArr, pts);
+};
+
+loadSubmitter("submitter-container",[],[],pts);
+</script>
+
+</body>
+</html>

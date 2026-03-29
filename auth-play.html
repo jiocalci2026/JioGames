@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+</head>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: background 0.3s ease;
+    }
+
+    .logger-card {
+        background: #fff;
+        color: #000;
+        border-radius: 16px;
+        padding: 10px 10px;
+        margin: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        width: 90%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .logger-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .loader {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .log-messages {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #f9f9f9;
+    font-size: 0.7rem;
+    border-radius: 6px;
+    line-height: 1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+    .log-line {
+        margin-bottom: 6px;
+    }
+    
+</style>
+<body>
+    
+    <div class="logger-card">
+    <div class="logger-title">
+        Submitting Data <div class="loader"></div>
+    </div>
+    <div class="log-messages" id="logOutput">
+        <!-- Logs will appear here -->
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="theme.js"></script>
+
+<script>
+    // Gradient background setup
+    // Background setup (SVG aware)
+const isGradient = localStorage.getItem("isGradient") === "true";
+const Color1 = localStorage.getItem("Color1") || "#ffffff";
+const Color2 = localStorage.getItem("Color2") || "#ffffff";
+
+// SVG ON → do nothing (theme.js or global bg will handle it)
+if (!(window.AppConfig && AppConfig.backgroundSVG && AppConfig.backgroundSVG.useSVG === true)) {
+    if (isGradient) {
+        document.body.style.background =
+            `linear-gradient(to bottom right, ${Color1}, ${Color2})`;
+    } else {
+        document.body.style.backgroundColor = Color1;
+    }
+}
+
+
+    // Hook console.log and console.error
+    (function() {
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logContainer = document.getElementById('logOutput');
+
+        function appendLog(msg, isError = false) {
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.style.color = isError ? 'red' : '#000';
+            line.textContent = msg;
+            logContainer.appendChild(line);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            args.forEach(arg => appendLog(typeof arg === "object" ? JSON.stringify(arg) : arg));
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            args.forEach(arg => appendLog(typeof arg === "object" ? JSON.stringify(arg) : arg, true));
+        };
+    })();
+</script>
+
+<script type="module">
+        
+      //  play.html?ID=TWROXRUQWUOV&MR=MAIN%20BAZAR&TP=Close&NL=1,2,3,4,5,6&PL=10,10,10,10,10,10&STP=Single%20Digit&DATE=2024-07-26&UN=Admin&TYP=PG
+
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-auth.js';
+        import { getDatabase, ref, push, set, serverTimestamp, startAfter, onChildAdded, remove, query, update, orderByKey, limitToLast, limitToFirst, get, onValue } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-database.js';
+
+        //const urlParams = new URLSearchParams(window.location.search);
+        console.log("Request Connected");
+        
+        /*var FT = urlParams.get("FTT"); if (!FT) {FT = window.keyy;}
+        var FU = urlParams.get('FUU'); if (!FU) {FU = window.uurl;}
+        var UN = urlParams.get("UN") || "unknown";
+        var ID = urlParams.get("ID") || null;
+        var MR = urlParams.get("MR") || null;
+        var NL = urlParams.get("NL") || null;
+        var PL = urlParams.get("PL") || null;
+        var TP = urlParams.get("TP") || null;
+        var STP = urlParams.get("STP") || null;
+        var DATE = urlParams.get("DT") || clock2("date");
+        var TIME = urlParams.get("CT") || clock2("time24");
+        var TYP = urlParams.get("TYP") || null; */
+var date, time12, time24;
+
+let NL, PL;
+
+try {
+    NL = JSON.parse(localStorage.getItem("NL") || "[]");
+    PL = JSON.parse(localStorage.getItem("PL") || "[]");
+} catch (e) {
+    console.error("wserror: Failed to parse NL/PL", e);
+    throw new Error("Invalid NL or PL JSON format");
+}
+
+if (!Array.isArray(NL) || !Array.isArray(PL) || NL.length === 0 || PL.length === 0 || NL.length !== PL.length) {
+    console.log("wserror: NL and PL are either empty or mismatched");
+    throw new Error("Invalid NL or PL data");
+}
+
+
+var FT = localStorage.getItem("FT");
+var FU = localStorage.getItem("FU");
+var UN = localStorage.getItem("username") || "unknown";
+var ID = localStorage.getItem("userid") || null;
+var MR = localStorage.getItem("marketName") || null;
+var TP = localStorage.getItem("marketType") || null;
+var STP = localStorage.getItem("marketSubtype") || null;
+var TYP = "PG"
+
+const localtimestamp = parseInt(localStorage.getItem("timestamp")) || Date.now();
+const dateObj = new Date(localtimestamp);
+
+// Format DATE as yyyy-MM-dd
+const DATE = dateObj.getFullYear() + "-" +
+             String(dateObj.getMonth() + 1).padStart(2, '0') + "-" +
+             String(dateObj.getDate()).padStart(2, '0');
+
+// Format TIME as HH:mm:ss
+const TIME = String(dateObj.getHours()).padStart(2, '0') + ":" +
+             String(dateObj.getMinutes()).padStart(2, '0') + ":" +
+             String(dateObj.getSeconds()).padStart(2, '0');
+
+
+        var firstget = 0;
+        const firebaseConfig = {
+            apiKey: FT,
+            databaseURL: FU
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const database = getDatabase(app);
+        let serverstamp = "";
+        let CAPATH = "PG";
+        let calimits = [];
+        let agent = "Y";
+
+        function signInUser(email, password) {
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    var user = userCredential.user;
+                    console.log("Fetching server time");
+                    storeServerTimestamp();
+                    //gamefetch()
+                })
+                .catch((error) => {
+                    var errorCode = error.code;
+                    var errorMessage = error.message;
+                    console.error("Error signing in:", errorCode, errorMessage);
+                });
+        }
+
+        let nfnty = 'sam';
+        let dgp = 'ple';
+        let fgy = '123';
+
+        signInUser(`${nfnty}${dgp}@gmail.com`, `${nfnty}${dgp}@${fgy}`);  // Replace with your authentication details
+
+        function gamefetch() {
+            const gamesRef = ref(database, 'GAMES/');
+            get(gamesRef)
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const dataa = snapshot.val();
+                        let finalmsg = "wserror : Market not found";
+                        let mrdata;
+                        let cc = false;
+                        console.log("Market details fetched");
+
+                        for (let key in dataa) {
+                            if (dataa[key] !== "x") {
+                                mrdata = JSON.parse(dataa[key]);
+                                if (mrdata[0] === MR) {
+                                    console.log("Market Exist");
+                                    console.log(mrdata[0]);
+                                    finalmsg = "";
+                                    const MTime = TP === "Open" ? mrdata[2] : mrdata[3];
+
+                                    if (mrdata[4] && mrdata[5]) {
+                                        const days = mrdata[6] + "";
+                                        if (days.includes(clock1("weekday") + "")) {
+                                            const x = new Date(clock1("date") + " " + MTime);
+                                            const diff = x.getTime() - clock1("y").getTime();
+
+                                            if (diff > 0) {
+                                                cc = true;
+                                            } else {
+                                                finalmsg = "wserror : Time Ended for play";
+                                            }
+                                        } else {
+                                            finalmsg = "wserror : Holiday declared you can't play this market";
+                                        }
+                                    } else {
+                                        finalmsg = "wserror : Market closed by admin";
+                                    }
+                                    break;
+                                };
+                            };
+                        };
+
+                        if (cc) {
+                            userpts();
+                        } else {
+                            console.log(finalmsg);
+                        }
+                    } else {
+                        console.log("No data available");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching data:", error);
+                });
+        };
+
+        function userpts() {
+            const userRef = ref(database, 'USERS/' + ID);
+            get(userRef)
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const dataa = snapshot.val();
+                        const bal = typeof dataa?.pts === "string" ? Number(dataa.pts.replace(/"/g, "")) || 0 : Number(dataa?.pts) || 0;
+                        agent = dataa.CA ? dataa.CA.replace(/"/g,"") : "Y";
+                        const total = PL.reduce((acc, val) => acc + parseFloat(val), 0);
+
+                        if (total <= bal) {
+                            const left = bal - total;
+
+                                const calimitref = ref(database, 'CALIMIT/');
+                                get(calimitref)
+                                .then((snapshot) =>{
+                                    if(snapshot.exists()){
+                                        calimits = snapshot.val();}
+                                        updateAllData(bal, total, left);
+                
+                                })
+                                .catch((error) => {console.error("Error fetching calimit data:", error);});
+                            
+                            
+                        } else {
+                            console.log("wserror : not enough points");
+                        }
+                    } else {
+                        console.log("No user data available");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching user data:", error);
+                });
+        };
+
+    function updateAllData(bal, total, left) {
+    const updates = {};
+
+    // 1. Update user points
+    updates[`USERS/${ID}/pts`] = `"${left}"`;
+
+    let totalPG = 0;
+    let totalPG2 = 0;
+    let Perc = calimits.PERC ? parseFloat(calimits.PERC.replace(/"/g, "")) : 0;
+    let FPM = calimits.FPM ? JSON.parse(calimits.FPM) : [];
+    let NPM = calimits.NPM ? JSON.parse(calimits.NPM) : [];
+
+    // 2. Process each number and place bids
+    if (NL.length > 6 && NL[1].length == 1 || NL.length > 69 && NL[1].length == 2){
+        agent = "SY";
+    }
+
+    NL.forEach((num, key) => {
+    const rn = [randomID(5, false, true)];
+    let pathh = "PG"; // Default path
+    
+    if(agent == "SY"){
+        let amt = PL[key]*1;
+        totalPG  += amt;
+        updates[`PG/${date}/${MR}/${TP}/${num}/${ID}/${rn}`] = `${amt}`;
+
+    } else if (Perc > 0){
+        let amt = PL[key]*1;
+        let amt1 = Math.floor(amt - amt * Perc / 100);
+        let amt2 = amt - amt1;
+        totalPG  += amt1;
+        totalPG2 += amt2;
+        updates[`PG/${date}/${MR}/${TP}/${num}/${ID}/${rn}`] = `${amt1}`;
+        updates[`PG2/${date}/${MR}/${TP}/${num}/${ID}/${rn}`] = `${amt2}`;
+    } else {
+            if (agent == "N") {
+            let maxlimit;
+            switch (num.length) {
+                case 1:
+                    maxlimit = parseFloat(calimits.SD.replace(/"/g, ""));
+                    break;
+                case 2:
+                case 3:
+                    const digitCounts = {};
+                    for (let char of num) {
+                        if (char !== '-') {
+                            digitCounts[char] = (digitCounts[char] || 0) + 1;
+                        }
+                    }
+                    if (Object.values(digitCounts).includes(3)) {
+                        maxlimit = parseFloat(calimits.TP.replace(/"/g, ""));
+                    } else if (Object.values(digitCounts).includes(2)) {
+                        maxlimit = parseFloat(calimits.DP.replace(/"/g, ""));
+                    } else {
+                        maxlimit = parseFloat(calimits.SP.replace(/"/g, ""));
+                    }
+                    if (num.length === 2) {
+                        maxlimit = parseFloat(calimits.DD.replace(/"/g, ""));
+                    }
+                    break;
+                case 5:
+                    maxlimit = parseFloat(calimits.HS.replace(/"/g, ""));
+                    break;
+                case 10:
+                    maxlimit = parseFloat(calimits.FS.replace(/"/g, ""));
+                    break;
+                default:
+                    break;
+            }
+
+            if (parseFloat(PL[key]) <= maxlimit) {
+                pathh = "PG2";
+            }
+        } 
+        
+        if (NPM.includes(`${MR}`)){pathh = "PG2"}else if(FPM.includes(`${MR}`)){pathh = "PG"};
+        if (pathh === "PG") {
+            totalPG += parseFloat(PL[key]);
+        } else {
+            totalPG2 += parseFloat(PL[key]);
+        }
+
+        updates[`${pathh}/${date}/${MR}/${TP}/${num}/${ID}/${rn}`] = PL[key];
+
+        };
+        
+    });
+
+    // 3. Update history data
+    const ptdata = NL.map((num, index) => `${num} = ${PL[index]}`)
+        .reduce((acc, val, index) => {
+            const separator = ((index + 1) % 3 === 0) ? "&" : "         ";
+            return acc + val + (index === NL.length - 1 ? "" : separator);
+        }, "");
+
+    const historyKey = `${date}&${time24}&${MR}&${randomID(5, true, false)}`;
+    updates[`HISTORY/${date}/${ID}/${historyKey}`] = `"Point Played: ${total}&Remaining Points: ${bal} - ${total} = ${left}&Total Numbers: ${NL.length}&${MR} - ${TP} - ${STP}&${date} ${time12}&-92160&&${ptdata}"`;
+
+    // 4. Update TPA data
+    if (totalPG > 0) {
+        updates[`TPA/${date}/${MR}/${TP}/${randomID(6, true, true)}`] = `"${totalPG}"`;
+    }
+    if (totalPG2 > 0) {
+        updates[`TPA2/${date}/${MR}/${TP}/${randomID(6, true, true)}`] = `"${totalPG2}"`;
+    }
+
+    // 5. Check maintenance mode and update Firebase
+    const mtncOFF = ref(database, 'ADM/Maintanance/');
+    get(mtncOFF).then((snapshot) => {
+        if (snapshot.exists()) {
+            const mtnce = snapshot.val().replace(/"/g, "");
+            if (mtnce === "OFF") {
+                update(ref(database), updates).then(() => {
+                    ptdata.split("&").forEach((log) => {
+                        console.log(log.replace(/  /g, "   "));
+                    });
+                    
+                    localStorage.removeItem("NL");
+                    localStorage.removeItem("PL");
+
+                    console.log("Data Submitted Successfully");
+                    window.history.back();
+
+                }).catch((error) => {
+                    console.log("Error: ", error);
+                });
+            } else {
+                console.log('wserror: maintainance is ON. Play after some time');
+            }
+        }
+    });
+}
+
+        function storeServerTimestamp() {
+            const timestampRef = ref(database, 'TIMESTAMP/timestamps');
+
+            set(timestampRef, serverTimestamp())
+                .then(() => {
+                    
+                    retrieveAndFormatTimestamp();
+                })
+                .catch((error) => {
+                    console.error("wserror: unable to get time");
+                });
+        }
+
+        function retrieveAndFormatTimestamp() {
+            const timestampRef = ref(database, 'TIMESTAMP/timestamps');
+
+            get(timestampRef)
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const timestamp = snapshot.val();
+                        if (timestamp) {
+                            // Convert timestamp to date
+                            serverstamp = timestamp;
+
+                            console.log("DATE :", clock1('date'));
+                            console.log("TIME :", clock1('time12'));
+                        
+                            aftertime();
+                        }
+                    } else {
+                        console.log("No timestamp found.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error retrieving timestamp:", error);
+                });
+        }
+
+        function aftertime() {
+            date = clock1("date");
+            time12 = clock1("time12");
+            time24 = clock1("time24");
+            
+
+            if (TYP === "PG" && NL && PL && ID && MR && TP && STP) {
+                if (typeof NL === "string") NL = NL.split(",");
+                if (typeof PL === "string") PL = PL.split(",");
+
+                if (NL.length === PL.length && NL.every(num => num.trim().length === NL[0].trim().length)) {
+                    if ([2, 5, 10].includes(NL[0].trim().length)) TP = "Open";
+                    gamefetch();
+                } else {
+                    console.log("numbers are not well formed or Pointlist and numlist mismatched");
+                }
+            } else {
+                console.log("data is not well formed some data is missing");
+            }
+        }
+
+        function clock2(a) {
+            var hh = new Date().getHours();
+            var mm = new Date().getMinutes();
+            var ss = new Date().getSeconds();
+            var dd = new Date().getDate();
+            var MM = new Date().getMonth() + 1;
+            var yy = new Date().getFullYear();
+            var val = MM + " " + dd + " " + yy + " " + hh + ":" + mm + ":" + ss + " GMT+05:30";
+
+            var y = new Date(val);
+            var hh = y.getHours();
+            if (hh.toString().length == 1) { hh = "0" + hh; }
+            var mm = y.getMinutes();
+            if (mm.toString().length == 1) { mm = "0" + mm; }
+            var ss = y.getSeconds();
+            if (ss.toString().length == 1) { ss = "0" + ss; }
+            var time12 = y.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+            if (time12.length == 10) { time12 = "0" + time12; }
+            var time24 = hh + ":" + mm + ":" + ss;
+            var yy = y.getFullYear();
+            var MM = y.getMonth() + 1;
+            if (MM.toString().length == 1) { MM = "0" + MM; }
+            var dd = y.getDate();
+            if (dd.toString().length == 1) { dd = "0" + dd; }
+            var date = yy + "-" + MM + "-" + dd;
+            var weekday = y.getDay() + 1;
+
+            if (a == "date") { return date; }
+            if (a == "y") { return y; }
+            if (a == "time12") { return time12; }
+            if (a == "time24") { return time24; }
+            if (a == "yy") { return yy; }
+            if (a == "MM") { return MM; }
+            if (a == "dd") { return dd; }
+            if (a == "hh") { return hh; }
+            if (a == "mm") { return mm; }
+            if (a == "ss") { return ss; }
+            if (a == "weekday") { return weekday; }
+        }
+
+        function clock1(a) {
+         const totalss = Math.floor((serverstamp+19800000)/ 1000);
+         const days = Math.floor(totalss / (24 * 60 * 60));
+         const HH = String(Math.floor((totalss % (24 * 60 * 60)) / (60 * 60))).padStart(2,'0');
+         const hh = String(HH % 12 || 12).padStart(2, '0');
+         const ampm = HH >= 12 ? 'PM' : 'AM';
+         const mm = String(Math.floor((totalss % (60 * 60)) / 60)).padStart(2,'0');
+         const ss = String(totalss % 60).padStart(2,'0');
+         const epoch = new Date(0); // Epoch reference point
+         epoch.setUTCSeconds(totalss);
+         const yy = epoch.getUTCFullYear();
+         const MM = String(epoch.getUTCMonth() + 1).padStart(2,'0'); // Months are zero-based
+         const dd = String(epoch.getUTCDate()).padStart(2,'0');
+         const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+         const weekday = weekdays[epoch.getUTCDay()];
+         const weekdaynum = epoch.getUTCDay()+1;
+
+        var date = yy + "-" + MM + "-" + dd;
+        var time12 = `${hh}:${mm}:${ss} ${ampm}`;
+        var time24 = `${HH}:${mm}:${ss}`;
+        var TIMEZONE = new Date(date+" "+time24);
+        var y = TIMEZONE;
+        if (a == "date") { return date }
+        if (a == "y"){return y}
+        if (a == "time12") { return time12 }
+        if (a == "time24") { return time24 }
+        if (a == "yy") { return yy }
+        if (a == "MM") { return MM }
+        if (a == "dd") { return dd }
+        if (a == "hh") { return hh }
+        if (a == "HH") { return HH }
+        if (a == "mm") { return mm }
+        if (a == "ss") { return ss }
+        if (a == "weekday") { return weekdaynum }
+}
+
+
+
+        function randomID(length, nums, chars) {
+            var charsList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            var numsList = "123456789";
+            var list = (nums ? numsList : "") + (chars ? charsList : "");
+            var arr = list.split("");
+            var charId = "";
+            for (var i = 1; i < length; i++) {
+                charId += arr[Math.floor(Math.random() * arr.length)];
+            }
+            if (chars){charId = charId+"A"};
+            return charId;
+        }
+    </script>
+</body>
+</html>

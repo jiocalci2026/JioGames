@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- QR Code library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>Auto Deposit</title>
+    <link rel="icon" href="assets/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box}
+        html, body {
+          height: 100%;
+          margin: 0;
+        }
+        body{
+          font-family:Poppins,sans-serif;
+          overflow: hidden;
+        }
+        .header{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            padding:14px 15px;
+            background:var(--header-bg);
+            color:#fff;
+            box-shadow:0 4px 12px rgba(0,0,0,.35);
+        }
+        .header img{height:32px}
+        .header-title{font-weight:600;font-size:16px;color:#fff}
+        .profile-card{
+            margin:15px;
+            padding:18px;
+            border-radius:18px;
+            color:#fff;
+            position:relative;
+            overflow:hidden;
+            background:linear-gradient(135deg,#111,#333);
+            box-shadow:0 10px 25px rgba(0,0,0,.35)
+        }
+        .profile-card::after{
+            content:"";
+            position:absolute;
+            inset:0;
+            background:linear-gradient(120deg,transparent,rgba(255,255,255,.25),transparent);
+            animation:shimmer 2.5s infinite;
+        }
+        @keyframes shimmer{
+            0%{transform:translateX(-100%)}
+            100%{transform:translateX(100%)}
+        }
+        .profile-top{
+            display:flex;
+            align-items:center;
+            gap:14px;
+            position:relative;
+            z-index:2;
+        }
+        .profile-avatar{
+            width:55px;
+            height:55px;
+            border-radius:50%;
+            background:#fff;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .profile-avatar img{width:34px}
+        .profile-name{font-size:16px;font-weight:600}
+        .profile-mobile{font-size:13px;opacity:.9}
+        .profile-bottom{
+            margin-top:18px;
+            display:flex;
+            justify-content:space-between;
+            position:relative;
+            z-index:2;
+        }
+        .wallet{font-size:14px}
+        .wallet span{
+            display:block;
+            font-size:20px;
+            font-weight:600;
+        }
+        .form-box{
+            margin:15px;
+            background:#fff;
+            padding:15px;
+            border-radius:14px;
+            box-shadow:0 4px 12px rgba(0,0,0,.1)
+        }
+        .form-box label{font-size:14px;font-weight:500}
+        .form-box input{
+            width:100%;
+            margin-top:6px;
+            padding:12px;
+            border-radius:10px;
+            border:1px solid #ccc;
+            font-size:16px;
+        }
+        .hint{font-size:12px;margin-top:6px;opacity:.7}
+        .btn{
+    margin-top:15px;
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:14px;
+    font-size:16px;
+    font-weight:600;
+    background:#ccc; /* light gray */
+    cursor:not-allowed;
+    color:#080808;
+}
+.btn.active{
+    background:#4ee77c !important; /* green */
+    color:#0a0a0a;
+    cursor:pointer;
+}
+        .video-box{
+            margin:15px;
+            border-radius:14px;
+            overflow:hidden;
+            box-shadow:0 4px 12px rgba(0,0,0,.15);
+            position:relative;
+            cursor:pointer;
+        }
+        .video-box iframe{
+            width:100%;
+            height:200px;
+            border:none;
+        }
+        .play-icon{
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%,-50%);
+            width:64px;
+            height:64px;
+            background:rgb(255,1,1);
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 6px 18px rgba(0,0,0,.5);
+        }
+        .play-icon::before{
+            content:"";
+            margin-left:4px;
+            border-style:solid;
+            border-width:12px 0 12px 20px;
+            border-color:transparent transparent transparent #fff;
+        }
+        .modal{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.55);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:99;
+        }
+        .modal-content{
+            background:#fff;
+            width:90%;
+            max-width:350px;
+            border-radius:18px;
+            padding:18px;
+            max-height:90vh;
+            overflow-y:auto;
+        }
+
+        /* ===== QR SECTION ===== */
+        .qr-section{
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            background:#f9f9f9;
+            border-radius:14px;
+            padding:16px 10px 10px;
+            margin-bottom:14px;
+            border:1px solid #e0e0e0;
+        }
+        .qr-label{
+            font-size:13px;
+            font-weight:600;
+            color:#333;
+            margin-bottom:10px;
+            letter-spacing:.3px;
+        }
+        #qrCanvas{
+            border-radius:8px;
+            padding:6px;
+            background:#fff;
+            box-shadow:0 2px 8px rgba(0,0,0,.12);
+        }
+        /* qrcodejs renders a canvas or img inside the div */
+        #qrCanvas img,
+        #qrCanvas canvas{
+            display:block;
+            border-radius:6px;
+        }
+        .qr-hint{
+            margin-top:10px;
+            font-size:11.5px;
+            color:#888;
+            text-align:center;
+            line-height:1.5;
+        }
+        .qr-divider{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            margin:4px 0 14px;
+            color:#aaa;
+            font-size:12px;
+        }
+        .qr-divider::before,
+        .qr-divider::after{
+            content:"";
+            flex:1;
+            height:1px;
+            background:#e0e0e0;
+        }
+
+        .pay-btn{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:14px;
+            border-radius:14px;
+            margin-bottom:12px;
+            font-weight:600;
+            box-shadow:0 4px 10px rgba(138, 139, 139, 0.61);
+            cursor:pointer;
+        }
+        .pay-btn img{height:28px}
+        .wait-label{
+            text-align:center;
+            font-size:13px;
+            color:#666;
+            margin-top:10px;
+            margin-bottom:10px;
+        }
+        .progress-bar{
+            display:none;
+            width:100%;
+            height:6px;
+            background:#e0e0e0;
+            border-radius:10px;
+            overflow:hidden;
+            margin-top:10px;
+        }
+        .progress-bar-inner{
+            height:100%;
+            background:#4caf50;
+            width:0%;
+            transition:width 0.5s linear;
+        }
+        .contact-admin-btn{
+            display:none;
+            width:100%;
+            padding:14px;
+            border:none;
+            border-radius:14px;
+            font-size:16px;
+            font-weight:600;
+            cursor:pointer;
+            background:#28bd77;
+            color:#fff;
+            margin-top:15px;
+        }
+        .snackbar{
+            position:fixed;
+            bottom:-60px;
+            left:50%;
+            transform:translateX(-50%);
+            background:#323232;
+            color:#fff;
+            padding:14px 18px;
+            border-radius:12px;
+            font-size:14px;
+            box-shadow:0 4px 12px rgba(0,0,0,.3);
+            transition:.3s;
+            z-index:999;
+        }
+        .snackbar.show{bottom:25px}
+        .snackbar.green{background:#4caf50}
+        .page{
+          height:100vh;
+          overflow-y:auto;
+          padding:10px;
+          padding-bottom:120px;
+          box-sizing:border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- HEADER -->
+        <div class="header">
+            <img src="assets/logo.png">
+            <div class="header-title">Auto Deposit</div>
+        </div>
+
+        <!-- PROFILE CARD -->
+        <div class="profile-card">
+            <div class="profile-top">
+                <div class="profile-avatar">
+                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+                </div>
+                <div>
+                    <div class="profile-name" id="uName">User</div>
+                    <div class="profile-mobile" id="uMobile">XXXXXXXXXX</div>
+                </div>
+            </div>
+            <div class="profile-bottom">
+                <div class="wallet">
+                    Wallet Points
+                    <span id="uPts">0</span>
+                </div>
+                <div class="wallet">
+                    Account
+                    <span>ACTIVE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AMOUNT -->
+        <div class="form-box">
+            <label>Enter Amount</label>
+            <input type="number" id="amount" inputmode="numeric" placeholder="Enter amount">
+            <div class="hint" id="minHint"></div>
+            <button class="btn" id="makePayBtn" disabled>Loading Payment Details</button>
+        </div>
+
+        <!-- VIDEO -->
+        <div class="video-box" id="videoBox">
+            <img id="videoThumb" src="" alt="Video Thumbnail" style="width:100%;display:none">
+            <div class="play-icon"></div>
+        </div>
+
+        <!-- PAYMENT MODAL -->
+        <div class="modal" id="payModal">
+            <div class="modal-content">
+
+                <!-- QR CODE SECTION -->
+                <div class="qr-section">
+                    <div class="qr-label">📷 Scan & Pay via any UPI app</div>
+                    <div id="qrCanvas"></div>
+                    <div class="qr-hint">After scan and paid,<br>wait for <b>5 to 40 seconds</b></div>
+                </div>
+
+                <!-- DIVIDER -->
+                <div class="qr-divider">or pay via UPI Apps 👇</div>
+
+                <!-- PAY BUTTONS -->
+                <div class="pay-btn" id="gpayBtn">
+                    <img src="assets/gpay.png">
+                    Google Pay
+                </div>
+                <div class="pay-btn" id="paytmBtn">
+                    <img src="assets/paytm.png">
+                    Paytm
+                </div>
+
+                <div class="wait-label">After payment success, wait for 30 - 50 seconds</div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-bar-inner" id="progressBarInner"></div>
+                </div>
+                <button class="contact-admin-btn" id="contactAdminBtn">Contact Admin</button>
+            </div>
+        </div>
+
+        <!-- SNACKBAR -->
+        <div class="snackbar" id="snackbar"></div>
+    </div>
+
+    <!-- config & theme MUST be at bottom so <body> exists when theme.js runs -->
+    <script src="config.js"></script>
+    <script src="theme.js"></script>
+
+    <script>
+        /* ===== GLOBAL VARIABLES ===== */
+        let database;
+        let auth;
+        let userId;
+        let currentPoints = 0;
+        let pointsListener = null;
+        let randomVPA = "";
+        let vpaList = [];
+        let videoId = "";
+        let appId = localStorage.getItem("appID") || "";
+        let progressInterval = null;
+        let progressTimeout = null;
+        let currentProgressWidth = 0;
+        let isWaitingForPayment = false;
+        let paymentAmount = 0;
+        let qrInstance = null;
+
+        /* ===== TRANSACTION REF GENERATOR ===== */
+        function buildTxnRef() {
+            const uid = localStorage.getItem("userid") || "0";
+            const now = new Date();
+            const pad = n => n.toString().padStart(2, "0");
+            const yy = now.getFullYear().toString().slice(-2);
+            const MM = pad(now.getMonth() + 1);
+            const dd = pad(now.getDate());
+            const HH = pad(now.getHours());
+            const mm = pad(now.getMinutes());
+            const ss = pad(now.getSeconds());
+            const cleanAppId = appId.replace(/"/g, "").trim();
+            return `${uid}_${yy}${MM}${dd}${HH}${mm}${ss}_${cleanAppId}`;
+        }
+
+        /* ===== BUILD UPI STRING ===== */
+        function buildUpiString(amt) {
+            const tr = buildTxnRef();
+            return `upi://pay?pa=${randomVPA}&am=${amt}&cu=INR&mc=0000&tr=${tr}`;
+        }
+
+        /* ===== RENDER QR ===== */
+        function renderQR(upiData) {
+            const container = document.getElementById("qrCanvas");
+            container.innerHTML = ""; // clear previous
+            qrInstance = new QRCode(container, {
+                text: upiData,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        /* ===== RUN AFTER DOM READY ===== */
+        document.addEventListener("DOMContentLoaded", () => {
+            const cfg = window.AppConfig;
+
+            /* HEADER COLOR */
+            document.documentElement.style.setProperty(
+                "--header-bg",
+                (cfg && cfg.mainColor1) || "#000"
+            );
+
+            /* USER DATA */
+            userId = localStorage.getItem("userid");
+            uMobile.innerText = localStorage.getItem("mobile") || "XXXXXXXXXX";
+            const minDP = parseInt(localStorage.getItem("M DP")) || 0;
+            minHint.innerText = "Minimum deposit ₹ " + minDP;
+
+            /* INITIALIZE FIREBASE */
+            initializeFirebase();
+
+            /* INTEGER ONLY */
+            amount.addEventListener("input", e => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+
+            /* SNACKBAR */
+            function showSnack(msg, isGreen = false) {
+                snackbar.innerText = msg;
+                snackbar.classList.add("show");
+                if (isGreen) {
+                    snackbar.classList.add("green");
+                } else {
+                    snackbar.classList.remove("green");
+                }
+                setTimeout(() => {
+                    snackbar.classList.remove("show");
+                    setTimeout(() => snackbar.classList.remove("green"), 300);
+                }, 2500);
+            }
+            window.showSnack = showSnack;
+
+            /* MAKE PAYMENT */
+            makePayBtn.onclick = () => {
+                const v = parseInt(amount.value || 0);
+                const minDP = parseInt(localStorage.getItem("M DP")) || 0;
+                if (v < minDP) {
+                    showSnack("Minimum deposit is ₹ " + minDP);
+                    amount.focus();
+                    return;
+                }
+                if (vpaList.length === 0) {
+                    showSnack("Payment system not ready. Please try again.");
+                    return;
+                }
+                selectRandomVPA();
+
+                /* render QR immediately with current amount */
+                const upiData = buildUpiString(amount.value);
+                renderQR(upiData);
+
+                payModal.style.display = "flex";
+                progressBar.style.display = "none";
+                contactAdminBtn.style.display = "none";
+            };
+
+            /* CLOSE MODAL */
+            payModal.onclick = e => {
+                if (e.target.id === "payModal") {
+                    payModal.style.display = "none";
+                    progressBar.style.display = "none";
+                    contactAdminBtn.style.display = "none";
+                    stopProgressBar();
+                    isWaitingForPayment = false;
+                }
+            };
+
+            /* GOOGLE PAY BUTTON */
+            gpayBtn.onclick = () => {
+                const amt = amount.value;
+                if (!amt || !randomVPA) return;
+                paymentAmount = amt;
+                const tr = buildTxnRef();
+                const data = `upi://pay?pa=${randomVPA}&am=${amt}&cu=INR&mc=0000&tr=${tr}`;
+                console.log(`GPAYQR=${data}`);
+                markVPAAsUsed();
+                isWaitingForPayment = true;
+            };
+
+            /* PAYTM BUTTON */
+            paytmBtn.onclick = () => {
+                const amt = amount.value;
+                if (!amt || !randomVPA) return;
+                paymentAmount = amt;
+                const tr = buildTxnRef();
+                const data = `paytmmp://cash_wallet?pa=${randomVPA}&am=${amt}&cu=INR&mc=0000&featuretype=money_transfer&tr=${tr}`;
+                console.log(`ActivityStarter=url===${data}`);
+                markVPAAsUsed();
+                isWaitingForPayment = true;
+            };
+
+            /* CONTACT ADMIN BUTTON */
+            contactAdminBtn.onclick = () => {
+                const contactLink = localStorage.getItem("contact");
+                const amt = paymentAmount;
+                const url = `${contactLink}?text=₹${amt} is not added`;
+                console.log(`ActivityStarter=url===${url}`);
+            };
+
+            /* PAGE VISIBILITY CHANGE */
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible" && isWaitingForPayment) {
+                    setTimeout(() => { startProgressBar(); }, 500);
+                }
+            });
+        });
+
+        /* ===== INITIALIZE FIREBASE ===== */
+        function initializeFirebase() {
+            const firebaseURL = localStorage.getItem("FU");
+            const firebaseAPIKey = localStorage.getItem("FT");
+            if (!firebaseURL || !firebaseAPIKey) {
+                console.error("Firebase credentials not found in localStorage");
+                return;
+            }
+            const firebaseConfig = { apiKey: firebaseAPIKey, databaseURL: firebaseURL };
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            auth = firebase.auth();
+            const authToken = localStorage.getItem("firebaseAuthToken");
+            if (authToken) {
+                console.log("Already authenticated");
+                onAuthSuccess();
+            } else {
+                auth.signInAnonymously()
+                    .then(() => {
+                        console.log("Anonymous sign-in successful");
+                        return auth.currentUser.getIdToken();
+                    })
+                    .then((token) => {
+                        localStorage.setItem("firebaseAuthToken", token);
+                        onAuthSuccess();
+                    })
+                    .catch((error) => { console.error("Firebase Auth Error:", error); });
+            }
+        }
+
+        /* ===== ON AUTH SUCCESS ===== */
+        function onAuthSuccess() {
+            listenToUserData();
+            fetchAdminData();
+        }
+
+        /* ===== LISTEN TO USER DATA ===== */
+        function listenToUserData() {
+            if (!userId || !database) return;
+            const userRef = database.ref(`USERS/${userId}`);
+            pointsListener = userRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const newPoints = Number((data.pts || 0).toString().replace(/"/g, ""));
+                    const username = data.user || "User";
+                    const cleanUsername = username.replace(/"/g, '').trim();
+                    uName.innerText = cleanUsername;
+                    localStorage.setItem("username", cleanUsername);
+                    if (currentPoints > 0 && newPoints > currentPoints && isWaitingForPayment) {
+                        stopProgressBar();
+                        progressBar.style.display = "none";
+                        contactAdminBtn.style.display = "none";
+                        payModal.style.display = "none";
+                        isWaitingForPayment = false;
+                        window.showSnack("Point Added...", true);
+                        setTimeout(() => { window.history.back(); }, 1000);
+                    }
+                    currentPoints = newPoints;
+                    uPts.innerText = newPoints;
+                    localStorage.setItem("pts", newPoints);
+                }
+            });
+        }
+
+        /* ===== FETCH ADMIN DATA ===== */
+        function fetchAdminData() {
+            if (!database) return;
+            const adminRef = database.ref('ADM2');
+            adminRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    /* APPID */
+                    if (data.APPID) {
+                        appId = data.APPID.toString().replace(/"/g, "").trim();
+                        localStorage.setItem("appID", appId);
+                    }
+                    /* VIDEO */
+                    if (data.VID) {
+                        videoId = (data.VID || '').replace(/"/g, '');
+                        videoThumb.onload = () => { videoThumb.style.display = "block"; };
+                        videoThumb.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                    }
+                    /* VPA LIST */
+                    const isVU = localStorage.getItem("VU") === "true";
+                    let vpaSource = isVU ? data['V-VPA'] : data.VPA;
+                    if (vpaSource) {
+                        let vpaArray = [];
+                        if (typeof vpaSource === 'string') {
+                            try { vpaArray = JSON.parse(vpaSource); }
+                            catch (e) { vpaArray = vpaSource.split(',').map(s => s.trim()); }
+                        } else if (Array.isArray(vpaSource)) {
+                            vpaArray = vpaSource;
+                        }
+                        vpaList = vpaArray
+                            .filter(vpa => vpa.includes('===true'))
+                            .map(vpa => vpa.replace('===true', '').replace(/"/g, '').trim());
+                        console.log("Usable VPA List:", vpaList);
+                    }
+
+                 makePayBtn.disabled = false;
+                 makePayBtn.innerText = "Make Payment";
+                 makePayBtn.classList.add("active");
+                }
+            });
+        }
+
+        /* VIDEO CLICK */
+        videoBox.onclick = () => {
+            if (!videoId) return;
+            console.log(`ActivityStarter=url===https://youtu.be/${videoId}`);
+        };
+
+        /* ===== SELECT RANDOM VPA ===== */
+        function selectRandomVPA() {
+            if (vpaList.length === 0) return;
+            let usedVPAs = [];
+            const usedVPAsStr = localStorage.getItem("usedVPAs");
+            if (usedVPAsStr) {
+                try { usedVPAs = JSON.parse(usedVPAsStr); }
+                catch (e) { usedVPAs = []; }
+            }
+            let availableVPAs = vpaList.filter(vpa => !usedVPAs.includes(vpa));
+            if (availableVPAs.length === 0) {
+                localStorage.removeItem("usedVPAs");
+                availableVPAs = [...vpaList];
+            }
+            const randomIndex = Math.floor(Math.random() * availableVPAs.length);
+            randomVPA = availableVPAs[randomIndex];
+            console.log("Selected VPA:", randomVPA);
+        }
+
+        /* ===== MARK VPA AS USED ===== */
+        function markVPAAsUsed() {
+            if (!randomVPA) return;
+            let usedVPAs = [];
+            const usedVPAsStr = localStorage.getItem("usedVPAs");
+            if (usedVPAsStr) {
+                try { usedVPAs = JSON.parse(usedVPAsStr); }
+                catch (e) { usedVPAs = []; }
+            }
+            if (!usedVPAs.includes(randomVPA)) {
+                usedVPAs.push(randomVPA);
+                localStorage.setItem("usedVPAs", JSON.stringify(usedVPAs));
+            }
+        }
+
+        /* ===== START PROGRESS BAR ===== */
+        function startProgressBar() {
+            progressBar.style.display = "block";
+            contactAdminBtn.style.display = "none";
+            currentProgressWidth = 0;
+            progressBarInner.style.width = "0%";
+            const totalDuration = 4000;
+            const intervalTime = 100;
+            const incrementPerInterval = (100 / (totalDuration / intervalTime));
+            progressInterval = setInterval(() => {
+                currentProgressWidth += incrementPerInterval;
+                progressBarInner.style.width = currentProgressWidth + "%";
+                if (currentProgressWidth >= 100) {
+                    stopProgressBar();
+                    onProgressComplete();
+                }
+            }, intervalTime);
+        }
+
+        /* ===== STOP PROGRESS BAR ===== */
+        function stopProgressBar() {
+            if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+            if (progressTimeout) { clearTimeout(progressTimeout); progressTimeout = null; }
+        }
+
+        /* ===== ON PROGRESS COMPLETE ===== */
+        function onProgressComplete() {
+            progressBar.style.display = "none";
+            contactAdminBtn.style.display = "block";
+            isWaitingForPayment = true;
+        }
+    </script>
+</body>
+</html>

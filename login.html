@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <title>Login - KM Web App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      width: 100%;
+  height: 100%;
+  min-height: 100vh;
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 20px;
+    }
+
+    .welcome-text {
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 20px;
+
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+
+    .login-card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: #f1f1f1;
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+
+    .input-group img {
+      height: 20px;
+      width: 20px;
+      margin-right: 10px;
+    }
+
+    .input-group input {
+      border: none;
+      background: transparent;
+      outline: none;
+      flex: 1;
+      font-size: 16px;
+    }
+
+    .themed-button {
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .support-text {
+      text-align: center;
+      color: red;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    #app-logo {
+      height: 100px;
+      width: 100px;
+      border-radius: 50%;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div id="welcomeText" class="welcome-text">Welcome</div>
+
+    <img id="app-logo" src="" alt="App Logo">
+
+    <div class="login-card">
+      <div class="input-group">
+        <img src="https://cdn-icons-png.flaticon.com/128/15735/15735364.png" alt="User">
+        <input type="text" id="nameBox" placeholder="Enter Your Name">
+      </div>
+
+      <div class="input-group">
+        <img src="https://cdn-icons-png.flaticon.com/128/5585/5585856.png" alt="Phone">
+        <input type="text" id="mobileBox" placeholder="Enter 10 digit Mobile">
+      </div>
+
+      <div id="otpCard" class="themed-button">Get OTP</div>
+
+      <div id="otpBoxContainer" class="input-group hidden">
+        <img src="https://cdn-icons-png.flaticon.com/128/3596/3596156.png" alt="OTP">
+        <input type="text" id="otpbox" placeholder="Enter OTP">
+      </div>
+
+      <div id="continueCard" class="themed-button hidden">Continue</div>
+
+      <div id="loginProblem" style="cursor: pointer; text-decoration: underline;">
+        Problem in login? Click here
+      </div>
+    </div>
+  </div>
+
+  <!-- Invisible reCAPTCHA container -->
+  <div id="recaptcha-container"></div>
+
+  <script src="config.js"></script>
+  <script src="theme.js"></script>
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const cfg = window.AppConfig;
+
+    // Apply styles to OTP card
+    applyStyleToElement("otpCard", {
+      useGradientEffect: true,
+      borderRadius: "12px",
+      shadow: true
+    });
+
+    // Apply styles to Continue card
+    applyStyleToElement("continueCard", {
+      useGradientEffect: true,
+      borderRadius: "12px",
+      shadow: true
+    });
+
+    // Set welcome text color
+    const welcomeEl = document.getElementById("welcomeText");
+    if (welcomeEl) {
+      welcomeEl.style.color = cfg.useGradient ? "#ffffff" : cfg.mainColor1;
+    }
+  });
+  </script>
+
+<script>
+  let FU, FT;
+  let islogin = false;
+  let confirmationResult;
+  window.AppUtils = window.AppUtils || {};
+
+  loginprocess();
+
+  function loginprocess(){
+       FU = localStorage.getItem("FU");
+       FT = localStorage.getItem("FT");
+
+  if (!FU || !FT ) {
+    console.error("Missing Firebase keys in localStorage");
+  } else {
+    const firebaseConfig = {
+      apiKey: FT,
+      databaseURL: FU,
+    };
+
+    if(islogin == false){
+          // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Sign in anonymously
+    firebase.auth().signInAnonymously()
+      .then(() => {
+        islogin = true;
+        console.log("local signed in success 1");
+
+        // Read data from /ADM/
+        firebase.database().ref("/ADM/").once("value")
+          .then((snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                  const rawValue = data[key];
+                  const cleanKey = key.trim();
+                  const cleanValue = typeof rawValue === "string"
+                    ? rawValue.trim().replace(/^"+|"+$/g, "")
+                    : rawValue;
+
+                  localStorage.setItem(cleanKey, cleanValue);
+                  console.log(`save=${cleanKey}||&||${cleanValue}`);
+                }
+              } 
+              setupLoginLogic(db);
+              
+              // Initialize reCAPTCHA after Firebase is initialized
+              initializeRecaptcha();
+            } else {
+              console.warn("No data found at /ADM/");
+            }
+          })
+          .catch((error) => {
+            console.error("Error reading /ADM/:", error);
+          });
+      })
+      .catch((error) => {
+        console.error("Anonymous sign-in failed:", error);
+      });
+      
+     }
+   }
+  }
+
+  // Initialize reCAPTCHA
+  function initializeRecaptcha() {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        'recaptcha-container',
+        { size: 'invisible' }
+      );
+      recaptchaVerifier.render();
+    }
+  }
+
+  function setupLoginLogic(db) {
+    // Access DOM
+    const namebox = document.getElementById("nameBox");
+    const mobilebox = document.getElementById("mobileBox");
+    const otpbox = document.getElementById("otpbox");
+    const getOtpBtn = document.getElementById("otpCard");
+    const continueBtn = document.getElementById("continueCard");
+
+    // Snackbar function
+    function showSnackbar(msg, isSuccess = false) {
+      const bar = document.createElement("div");
+      bar.textContent = msg;
+      bar.style.position = "fixed";
+      bar.style.bottom = "20px";
+      bar.style.left = "50%";
+      bar.style.transform = "translateX(-50%)";
+      bar.style.padding = "10px 20px";
+      bar.style.color = "#fff";
+      bar.style.backgroundColor = isSuccess ? "green" : "red";
+      bar.style.borderRadius = "6px";
+      bar.style.zIndex = "1000";
+      document.body.appendChild(bar);
+      setTimeout(() => bar.remove(), 2500);
+    }
+
+    // Get OTP button
+    getOtpBtn.onclick = function () {
+      const otpSTM = localStorage.getItem("OTP STM");
+      const username = namebox.value.trim();
+      const mobile = mobilebox.value.trim().replace(/\s+/g, '');
+
+      if (!username || !mobile) {
+        showSnackbar("Name and Mobile are required!");
+        return;
+      }
+      if (mobile.length !== 10 || isNaN(mobile)) {
+        showSnackbar("Enter a valid 10-digit mobile number!");
+        return;
+      }
+
+      const encryptuserid = mobile;
+      localStorage.setItem("mobile", mobile);
+      
+      if (otpSTM === "ON") {
+        // Real OTP Authentication
+        getOtpBtn.disabled = true;
+        showSnackbar("Sending OTP...", true);
+
+        firebase.auth().signInWithPhoneNumber("+91" + mobile, window.recaptchaVerifier)
+          .then(result => {
+            confirmationResult = result;
+            getOtpBtn.style.display = "none";
+            document.getElementById("otpBoxContainer").classList.remove("hidden");
+            continueBtn.classList.remove("hidden");
+            continueBtn.style.display = "block";
+            showSnackbar("OTP sent successfully!", true);
+
+            const encryptedId = window.AppUtils.encryptMobile(encryptuserid);
+            localStorage.setItem("userid", encryptedId);
+          })
+          .catch(err => {
+            showSnackbar("Failed to send OTP: " + err.message);
+            getOtpBtn.disabled = false;
+            console.error("OTP Send Error:", err);
+          });
+
+      } else if (otpSTM === "OFF") {
+        // Fake OTP System
+        getOtpBtn.style.display = "none";
+        document.getElementById("otpBoxContainer").classList.remove("hidden");
+        continueBtn.classList.remove("hidden");
+        continueBtn.style.display = "block";
+
+        const fakeOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        const encryptedId = window.AppUtils.encryptMobile(encryptuserid);
+        localStorage.setItem("userid", encryptedId);
+        setTimeout(() => {
+          otpbox.value = fakeOTP;
+          finalLogin();
+        }, 1500);
+      }
+    };
+
+    // Final Login Logic
+    window.finalLogin = function finalLogin()  {
+      const otpSTM = localStorage.getItem("OTP STM");
+      const username = namebox.value.trim();
+      const mobile = mobilebox.value.trim().replace(/\s+/g, '');
+      const userid = localStorage.getItem("userid");
+      const VS = AppConfig.appVersion;
+      
+      if (!userid) return;
+
+      // If Real OTP mode, verify OTP first
+      if (otpSTM === "ON") {
+        const otp = otpbox.value.trim();
+        
+        if (!otp || otp.length !== 6) {
+          showSnackbar("Please enter 6-digit OTP");
+          return;
+        }
+
+        continueBtn.disabled = true;
+        continueBtn.textContent = "Verifying...";
+
+        confirmationResult.confirm(otp)
+          .then(res => {
+            console.log("OTP Verified Successfully. UID:", res.user.uid);
+            proceedToLogin();
+          })
+          .catch(err => {
+            showSnackbar("Invalid OTP. Please try again.");
+            continueBtn.disabled = false;
+            continueBtn.textContent = "Continue";
+            console.error("OTP Verification Error:", err);
+          });
+      } else {
+        // Fake OTP mode - directly proceed to login
+        proceedToLogin();
+      }
+
+      function proceedToLogin() {
+        const userRef = db.ref(`/USERS/${userid}`);
+        userRef.once("value", snapshot => {
+          const data = snapshot.val();
+          const isNewUser = !data || !data.pts;
+          let usernameFinal = username;
+
+          if (!isNewUser) {
+            usernameFinal = (data.user || "").trim().replace(/"/g, '');
+            localStorage.setItem("username", usernameFinal);
+          }
+
+          const notification = isNewUser
+            ? `Notification=New User : ${usernameFinal}||&||mobile : ${mobile}`
+            : `Notification=Relogin : ${usernameFinal}||&||mobile : ${mobile}`;
+          console.log(notification);
+          const DID = localStorage.getItem("DID");
+
+          const updates = {};
+          if (isNewUser) {
+            updates[`/USERS/${userid}`] = {
+              user: `"${usernameFinal}"`,
+              pts: `"0"`,
+              TD: `"0"`,
+              TW: `"0"`,
+              DID: `"${DID}"`,
+            };
+
+            const date = new Date();
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const datePath = `${yyyy}-${mm}-${dd}`;
+            const time12 = date.toLocaleTimeString("en-US", { hour12: true });
+            const newUserLog = `"${usernameFinal}&${userid}&${time12}"`;
+            updates[`/NEW/${datePath}/${userid}`] = { N: newUserLog };
+            
+          }else {
+                updates[`/USERS/${userid}/DID`] = `"${DID}"`;
+              }
+         
+
+          db.ref().update(updates, (error) => {
+            if (error) {
+              showSnackbar("Login Failed!", false);
+              console.error("Firebase Update Error:", error);
+              continueBtn.disabled = false;
+              continueBtn.textContent = "Continue";
+            } else {
+              showSnackbar("Login Successful!", true);
+              console.log("Real Login Successful");
+              console.log(`save=username||&||${usernameFinal}`);
+              console.log(`save=userid||&||${userid}`);
+              window.location.href = "home.html";
+            }
+          });
+        });
+      }
+    }
+
+    // Continue button
+    continueBtn.onclick = finalLogin;
+  }
+
+  function injectKeyBatch(pairs) {
+    for (const [key, value] of Object.entries(pairs)) {
+      localStorage.setItem(key, value);
+    }
+    if(islogin == true){
+      if (typeof finalLogin === "function") finalLogin();
+    } else {
+      loginprocess();
+    }
+  }
+
+  document.getElementById("loginProblem").addEventListener("click", () => {
+    const reflink = localStorage.getItem("contact") || "";
+    console.log(`ActivityStarter=url===${reflink}?text=Problem in Login`);
+  });
+
+</script>
+
+</body>
+</html>

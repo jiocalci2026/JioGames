@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OTP Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase COMPAT -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<style>
+  body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#274df5,#013ce0);
+  }
+
+  .card{
+    background:#fff;
+    width:320px;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 15px 40px rgba(0,0,0,.25);
+  }
+
+  h2{
+    margin:0 0 15px;
+    text-align:center;
+  }
+
+  .row{
+    display:flex;
+    margin-bottom:12px;
+  }
+
+  .prefix{
+    background:#eee;
+    padding:10px 12px;
+    border-radius:6px 0 0 6px;
+    border:1px solid #ccc;
+    font-weight:bold;
+  }
+
+  input{
+    flex:1;
+    border:1px solid #ccc;
+    border-left:none;
+    border-radius:0 6px 6px 0;
+    padding:10px;
+    font-size:16px;
+    outline:none;
+  }
+
+  button{
+    width:100%;
+    margin-top:10px;
+    padding:11px;
+    font-size:16px;
+    background:#274df5;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+  }
+
+  button:disabled{
+    opacity:.6;
+  }
+
+  .otp-box{
+    display:none;
+    margin-top:10px;
+  }
+
+  .otp-box input{
+    width:100%;
+    border-radius:6px;
+    border:1px solid #ccc;
+    padding:10px;
+    font-size:16px;
+  }
+
+  .note{
+    text-align:center;
+    font-size:13px;
+    color:#555;
+    margin-top:10px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Login with OTP</h2>
+
+  <div class="row">
+    <div class="prefix">+91</div>
+    <input id="mobile" type="tel" placeholder="Enter mobile number" maxlength="10">
+  </div>
+
+  <button id="sendBtn" onclick="sendOTP()">Get OTP</button>
+
+  <div class="otp-box" id="otpBox">
+    <input id="otp" type="tel" placeholder="Enter OTP" maxlength="6">
+    <button onclick="verifyOTP()">Verify OTP</button>
+  </div>
+
+  <div class="note">OTP will be sent instantly</div>
+</div>
+
+<!-- Invisible reCAPTCHA container -->
+<div id="recaptcha-container"></div>
+
+<script>
+  // 🔥 Firebase Config (APNA CONFIG DALO)
+  var firebaseConfig = {
+  apiKey: "AIzaSyAYl7sfTUw7JlMGb6Kl-THbL4jjvs8lWyI",
+  authDomain: "boss-95.firebaseapp.com",
+  databaseURL: "https://boss-95-default-rtdb.firebaseio.com",
+  projectId: "boss-95",
+  storageBucket: "boss-95.firebasestorage.app",
+  messagingSenderId: "1003037175411",
+  appId: "1:1003037175411:web:026f5c19d98f75f37ac406",
+  measurementId: "G-XEZ4HT6QB6"
+};
+  firebase.initializeApp(firebaseConfig);
+
+  let confirmationResult;
+
+  window.onload = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        'recaptcha-container',
+        { size: 'invisible' }
+      );
+      recaptchaVerifier.render();
+    }
+  };
+
+  function sendOTP(){
+    let mobile = document.getElementById("mobile").value.trim();
+
+    if(!/^[6-9]\d{9}$/.test(mobile)){
+      alert("Enter valid 10 digit mobile number");
+      return;
+    }
+
+    document.getElementById("sendBtn").disabled = true;
+
+    firebase.auth().signInWithPhoneNumber("+91" + mobile, window.recaptchaVerifier)
+      .then(result => {
+        confirmationResult = result;
+        document.getElementById("otpBox").style.display = "block";
+      })
+      .catch(err => {
+        alert(err.message);
+        document.getElementById("sendBtn").disabled = false;
+      });
+  }
+
+  function verifyOTP(){
+    let otp = document.getElementById("otp").value.trim();
+
+    confirmationResult.confirm(otp)
+      .then(res => {
+        alert("Login Successful");
+        console.log("UID:", res.user.uid);
+        // redirect / localStorage save yahin karo
+      })
+      .catch(() => {
+        alert("Invalid OTP");
+      });
+  }
+</script>
+
+</body>
+</html>

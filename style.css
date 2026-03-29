@@ -1,0 +1,56 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: "Poppins", sans-serif;
+  height: 100%;
+}
+
+.splash-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.logo {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.info-card {
+  background: white;
+  padding: 10px 24px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.app-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: black;
+}
+
+.app-version {
+  font-size: 14px;
+  color: #555;
+}
+
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 4px solid transparent;
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-top: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

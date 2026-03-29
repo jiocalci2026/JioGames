@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Winning Rates</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body{
+  font-family:Poppins,sans-serif;
+
+  /* 🔒 critical */
+  overflow: hidden;
+
+  /* background is handled by theme.js */
+}
+.page{
+  height: 100vh;        /* fixed viewport */
+  overflow-y: auto;     /* scroll ONLY here */
+  padding:10px;
+  padding-bottom:120px;
+  box-sizing:border-box;
+}
+
+/* ===== TITLE CARD ===== */
+.title-card{
+  margin:14px;
+  padding:14px 16px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:18px;
+  font-weight:600;
+  box-shadow:0 6px 14px rgba(0,0,0,.15);
+}
+
+/* ===== CONTENT ===== */
+.container{
+  padding:10px 14px 18px;
+}
+
+/* ===== GRID ===== */
+.rate-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:14px;
+}
+
+/* ===== RATE CARD ===== */
+.rate-card{
+  background:#fff;
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 6px 14px rgba(0,0,0,.12);
+  border:1px solid #eee;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.rate-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:14px;
+  font-weight:600;
+  color:#444;
+}
+
+.rate-title img{
+  width:26px;
+  height:26px;
+}
+
+.rate-value{
+  font-size:22px;
+  font-weight:700;
+  color:#000;
+}
+
+/* ===== FOOT NOTE ===== */
+.note{
+  margin-top:18px;
+  padding:12px;
+  background:#ffffff;
+  border-radius:14px;
+  font-size:13px;
+  text-align:center;
+  box-shadow:0 4px 10px rgba(0,0,0,.1);
+  line-height:1.5;
+}
+</style>
+</head>
+
+<body>
+  <div class="page">
+
+<!-- TITLE -->
+<div class="title-card" id="titleCard">
+  <img src="https://cdn-icons-png.flaticon.com/128/2617/2617955.png" width="28">
+  <span>Winning Rates</span>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+  <div class="rate-grid" id="rateGrid"></div>
+
+  <div class="note">
+    All winning rates are displayed based on a standard bidding value of
+    <b>₹10</b>. Actual payout will vary proportionally according to the
+    amount placed by the player.
+  </div>
+</div>
+</div>
+
+<!-- CONFIG & THEME -->
+<script src="config.js"></script>
+<script src="theme.js"></script>
+
+<script>
+/* =============================
+   TITLE CARD COLOR LOGIC
+   ============================= */
+(function(){
+  const cfg = window.AppConfig;
+  const card = document.getElementById("titleCard");
+
+  if (cfg.backgroundSVG && cfg.backgroundSVG.useSVG === true) {
+    card.style.background = "#ffffff";
+    card.style.color = "#000";
+  } else if (cfg.useGradient) {
+    card.style.background = "#ffffff";
+    card.style.color = "#000";
+  } else {
+    card.style.background =
+      `linear-gradient(135deg, ${cfg.mainColor1}, ${cfg.mainColor2})`;
+    card.style.color = "#fff";
+  }
+})();
+
+/* =============================
+   FIREBASE INIT
+   ============================= */
+const FU = localStorage.getItem("FU");
+if(!FU){
+  alert("Firebase URL missing");
+}
+
+firebase.initializeApp({
+  databaseURL: FU
+});
+
+const db = firebase.database();
+
+/* =============================
+   RATE TYPES WITH FLATICON ICONS
+   ============================= */
+const rateTypes = [
+  {
+    key:1,
+    name:"Single Digit",
+    icon:"https://cdn-icons-png.flaticon.com/128/3840/3840653.png"
+  },
+  {
+    key:2,
+    name:"Jodi Digit",
+    icon:"https://cdn-icons-png.flaticon.com/128/6912/6912910.png"
+  },
+  {
+    key:3,
+    name:"Single Panel",
+    icon:"https://cdn-icons-png.flaticon.com/128/14477/14477908.png"
+  },
+  {
+    key:4,
+    name:"Jodi Panel",
+    icon:"https://cdn-icons-png.flaticon.com/128/14477/14477907.png"
+  },
+  {
+    key:5,
+    name:"Triple Panel",
+    icon:"https://cdn-icons-png.flaticon.com/128/14477/14477895.png"
+  },
+  {
+    key:6,
+    name:"Half Sangam",
+    icon:"https://cdn-icons-png.flaticon.com/128/1215/1215088.png"
+  },
+  {
+    key:7,
+    name:"Full Sangam",
+    icon:"https://cdn-icons-png.flaticon.com/128/734/734458.png"
+  }
+];
+
+/* =============================
+   LOAD BHAV DATA
+   ============================= */
+db.ref("BHAV").on("value", snap=>{
+  const data = snap.val() || {};
+  const grid = document.getElementById("rateGrid");
+  grid.innerHTML = "";
+
+  rateTypes.forEach(t=>{
+    const value = data[t.key] || "--";
+
+    const card = document.createElement("div");
+    card.className = "rate-card";
+
+    card.innerHTML = `
+      <div class="rate-title">
+        <img src="${t.icon}">
+        <span>${t.name}</span>
+      </div>
+      <div class="rate-value">₹ ${value}</div>
+    `;
+
+    grid.appendChild(card);
+  });
+});
+</script>
+
+</body>
+</html>

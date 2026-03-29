@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body{
+  font-family:Poppins,sans-serif;
+
+  /* 🔒 critical */
+  overflow: hidden;
+
+  /* background is handled by theme.js */
+}
+
+
+.page{
+  height: 100vh;        /* fixed viewport */
+  overflow-y: auto;     /* scroll happens here */
+  padding:16px;
+  box-sizing:border-box;
+}
+
+.header{
+  color:#fff;
+  padding:16px;
+  border-radius:16px;
+  text-align:center;
+  font-size:22px;
+  font-weight:600;
+  backdrop-filter: blur(6px);
+}
+
+.profile-card{
+  margin-top:25px;
+  padding:25px 20px;
+  border-radius:24px;
+  background: rgba(255,255,255,0.92);
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+  text-align:center;
+}
+
+.profile-img{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid #fff;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  margin-bottom:10px;
+}
+
+.username{
+  font-size:22px;
+  font-weight:600;
+  margin-top:10px;
+}
+
+.userid{
+  font-size:13px;
+  color:#777;
+  word-break: break-all;
+  margin-bottom:15px;
+}
+
+.info-box{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#f4f4f4;
+  padding:12px 14px;
+  border-radius:14px;
+  margin:10px 0;
+  font-size:15px;
+}
+
+.info-box span{
+  font-weight:600;
+}
+
+.points-badge{
+  background: linear-gradient(135deg, #ff00cc, #3333ff);
+  color:#fff;
+  padding:14px;
+  border-radius:16px;
+  font-size:18px;
+  font-weight:600;
+  margin-top:15px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+</style>
+</head>
+
+<body>
+
+<div id="page" class="page">
+
+  <div id="header" class="header">My Profile</div>
+
+  <div class="profile-card" id="profileCard">
+
+    <img src="assets/profile.png" class="profile-img">
+
+    <div id="username" class="username">User</div>
+    <div id="userid" class="userid">USERID</div>
+
+    <div class="info-box">
+      <div>📱 Mobile</div>
+      <span id="mobile">0000000000</span>
+    </div>
+
+    <div class="points-badge">
+      💰 Points: <span id="pts">0</span>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- THEME LOADED AFTER BODY (FIX ERROR) -->
+<script src="theme.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  const cfg = window.AppConfig;
+  const page = document.getElementById("page");
+  const header = document.getElementById("header");
+
+  if(cfg.useGradient || cfg.backgroundSVG?.useSVG){
+    header.style.background = "rgba(0,0,0,0.35)";
+  }
+  document.querySelector(".points-badge").style.background = `linear-gradient(135deg, ${AppConfig.mainColor1}, ${AppConfig.mainColor2})`;
+
+  /* ===== LOCAL STORAGE DATA ===== */
+  document.getElementById("username").innerText = localStorage.getItem("username") || "User";
+  document.getElementById("mobile").innerText   = localStorage.getItem("mobile") || "N/A";
+  document.getElementById("userid").innerText   = localStorage.getItem("userid") || "N/A";
+  document.getElementById("pts").innerText      = localStorage.getItem("pts") || "0";
+
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=0.8">
+<title>Chart</title>
+
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body{
+  font-family:Poppins,sans-serif;
+
+  /* 🔒 critical */
+  overflow: hidden;
+
+  /* background is handled by theme.js */
+}
+.page{
+  height: 100vh;        /* fixed viewport */
+  overflow-y: auto;     /* scroll ONLY here */
+  padding:10px;
+  padding-bottom:120px;
+  box-sizing:border-box;
+}
+.header{
+  margin:14px;padding:14px;text-align:center;
+  font-size:18px;font-weight:700;border-radius:16px;
+  background:#fff;box-shadow:0 6px 14px rgba(0,0,0,.15);
+}
+.action-btn{
+  margin:10px auto;width:max-content;padding:10px 18px;
+  border-radius:999px;background:#fff;font-weight:600;
+  box-shadow:0 6px 14px rgba(0,0,0,.2);cursor:pointer;
+}
+.chart-container{
+  margin:14px;padding:10px;background:#fff;
+  border-radius:16px;box-shadow:0 6px 14px rgba(0,0,0,.12);
+  overflow-x:auto;
+}
+table{width:100%;border-collapse:collapse;}
+th,td{
+  border:1px solid #e0e0e0;
+  padding:6px;
+  text-align:center;
+  font-size:13px;
+}
+thead{background:#f3f3f3;font-weight:700;}
+.cell-stack{display:flex;flex-direction:column;gap:2px;}
+.panel{font-weight:500;}
+.jodi{font-weight:700;}
+.r{color:red;font-weight:700;}
+</style>
+</head>
+
+<body>
+<div class="page">
+<div class="header" id="chartTitle">CHART</div>
+<div class="action-btn" onclick="goToBottom()">⬇ Go to Bottom</div>
+<div class="chart-container" id="chartBox">
+  Waiting for data…
+</div>
+<div class="action-btn" onclick="goToTop()">⬆ Go to Top</div>
+</div>
+<script src="config.js"></script>
+<script src="theme.js"></script>
+
+<script>
+/* ================= INIT ================= */
+const cfg = window.AppConfig;
+const market = localStorage.getItem("chartMarket");
+console.log("[CHART] Market =", market);
+
+document.getElementById("chartTitle").innerText = market + " CHART";
+
+/* ================= SCROLL ================= */
+function getScrollElement(){
+  return document.querySelector(".page");
+}
+
+function goToTop(){
+  getScrollElement().scrollTo({top:0,behavior:"smooth"});
+}
+function goToBottom(){
+  const el=getScrollElement();
+  el.scrollTo({top:el.scrollHeight,behavior:"smooth"});
+}
+
+
+
+/* ================= RAW DATA HANDLER ================= */
+function rawData(htmlText){
+  console.log("[RAW] Processing HTML…");
+  document.getElementById("chartBox").innerHTML = "Processing chart…";
+
+  const data = parseHTML(htmlText);
+
+  if(!Object.keys(data).length){
+    document.getElementById("chartBox").innerHTML = "No data found";
+    return;
+  }
+
+  buildChart(data);
+}
+
+/* ================= PARSER ================= */
+function parseHTML(htmlText){
+
+  function pad(n){ return n < 10 ? "0"+n : n; }
+
+  function formatDate(d){
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+
+  function parseStartDate(text){
+    if(!text) return null;
+
+    // normalize separators and whitespace
+    text = text.replace(/\s+/g," ").replace(/to/ig," ").replace(/-/g,"/");
+
+    // match dates like:
+    // dd/MM/yyyy, dd/MM/yy
+    const m = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if(!m) return null;
+
+    let d = parseInt(m[1],10);
+    let mth = parseInt(m[2],10) - 1;
+    let y = parseInt(m[3],10);
+
+    // fix 2-digit year
+    if(y < 100){
+      y += (y >= 70 ? 1900 : 2000);
+    }
+
+    const date = new Date(y, mth, d);
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  function cleanPanel(td){
+    if(!td) return "";
+    const t = td.innerText.replace(/\s+/g,"");
+    if(t.includes("*")) return "";
+    const digits = t.match(/\d/g);
+    return digits ? digits.join("") : "";
+  }
+
+  function cleanJodi(td){
+    if(!td) return "";
+    const t = td.innerText.replace(/\s+/g,"");
+    if(t.includes("*")) return "";
+    return /^\d{2}$/.test(t) ? t : "";
+  }
+
+  const doc = new DOMParser().parseFromString(htmlText,"text/html");
+  const table = doc.querySelector("table.panel-content-chart.chart-table");
+  if(!table){
+    console.log("❌ Chart table not found");
+    return {};
+  }
+
+  const out = {};
+  let parsedDays = 0;
+  let skippedRows = 0;
+
+  table.querySelectorAll("tbody tr").forEach(row=>{
+    const tds = Array.from(row.querySelectorAll("td"));
+    if(tds.length < 4) return;
+
+    const startDate = parseStartDate(tds[0].innerText);
+    if(!startDate){
+      skippedRows++;
+      return;
+    }
+
+    let dayIndex = 0;
+
+    for(let i = 1; i + 2 < tds.length; i += 3){
+      const lp = cleanPanel(tds[i]);
+      const jd = cleanJodi(tds[i+1]);
+      const rp = cleanPanel(tds[i+2]);
+
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + dayIndex);
+
+      const key = formatDate(d);
+
+      if(lp || jd || rp){
+        out[key] = lp + "-" + jd + "-" + rp;
+      } else {
+        out[key] = ""; // preserve empty days
+      }
+
+      parsedDays++;
+      dayIndex++;
+    }
+  });
+
+  console.log("[PARSE] total parsed days:", parsedDays);
+  console.log("[PARSE] skipped rows (bad date):", skippedRows);
+  console.log("[PARSE] total records:", Object.keys(out).length);
+
+  return out;
+}
+
+
+
+
+/* ================= RENDER ================= */
+
+function localDateKey(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
+function buildChart(data){
+
+  const dates = Object.keys(data).sort();
+  if(!dates.length){
+    document.getElementById("chartBox").innerHTML = "No chart data";
+    return;
+  }
+
+  const toDate = d => {
+    const [y,m,dd] = d.split("-").map(Number);
+    return new Date(y, m-1, dd); // LOCAL date
+  };
+
+  const firstDate = toDate(dates[0]);
+  const lastDate  = toDate(dates[dates.length - 1]);
+
+  // get Monday on or before first date
+  let chartStart = new Date(firstDate);
+  const fd = chartStart.getDay(); // 0=Sun
+  chartStart.setDate(chartStart.getDate() - (fd === 0 ? 6 : fd - 1));
+
+  // get Sunday on or after last date
+  let chartEnd = new Date(lastDate);
+  const ld = chartEnd.getDay();
+  chartEnd.setDate(chartEnd.getDate() + (ld === 0 ? 0 : 7 - ld));
+
+  let rowsHTML = "";
+
+  for(
+    let weekStart = new Date(chartStart);
+    weekStart <= chartEnd;
+    weekStart.setDate(weekStart.getDate() + 7)
+  ){
+    const cells = Array(7).fill("");
+
+    for(let i = 0; i < 7; i++){
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+
+      const key = localDateKey(d);
+
+      if(data[key]){
+        const p = data[key].split("-");
+        cells[i] = `
+          <div class="cell-stack">
+            <div class="panel">${p[0]}</div>
+            <div class="jodi">${p[1]}</div>
+            <div class="panel">${p[2]}</div>
+          </div>`;
+      }
+    }
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    rowsHTML += `
+      <tr>
+        <td>
+          ${localDateKey(weekStart)}
+          <br>TO<br>
+          ${localDateKey(weekEnd)}
+        </td>
+        ${cells.map(c => `<td>${c}</td>`).join("")}
+      </tr>`;
+  }
+
+  document.getElementById("chartBox").innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Date Range</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+          <th>Sun</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHTML}</tbody>
+    </table>`;
+}
+function goWithFirebase(){
+
+  const FU = localStorage.getItem("FU");
+  const market = localStorage.getItem("chartMarket");
+
+  if(!FU || !market){
+    document.getElementById("chartBox").innerHTML = "Firebase config missing";
+    return;
+  }
+
+  const url = FU.replace(/\/+$/,"") + "/CHART/" + market + ".json";
+
+  console.log("[FIREBASE] Fetching:", url);
+  document.getElementById("chartBox").innerHTML = "Loading from Firebase…";
+
+  fetch(url)
+    .then(res => res.json())
+    .then(json => {
+
+      if(!json || typeof json !== "object"){
+        document.getElementById("chartBox").innerHTML = "No Firebase data";
+        return;
+      }
+
+      const data = normalizeFirebaseChart(json);
+
+      if(!Object.keys(data).length){
+        document.getElementById("chartBox").innerHTML = "Empty Firebase chart";
+        return;
+      }
+
+      console.log("[FIREBASE] Records:", Object.keys(data).length);
+      buildChart(data);
+    })
+    .catch(err => {
+      console.error("[FIREBASE] Error:", err);
+      document.getElementById("chartBox").innerHTML = "Firebase load failed";
+    });
+}
+
+function normalizeFirebaseChart(json){
+
+  const out = {};
+
+  Object.keys(json).forEach(dateKey => {
+
+    // accept only yyyy-mm-dd keys
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return;
+
+    let val = String(json[dateKey]).trim();
+
+    // 🔥 REMOVE EXTRA DOUBLE / SINGLE QUOTES
+    // handles: "123-45-678", '123-45-678', ""123-45-678""
+    while(
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ){
+      val = val.slice(1, -1).trim();
+    }
+
+    if(!val) return;
+
+    out[dateKey] = val;
+  });
+
+  return out;
+}
+
+
+
+
+</script>
+<script>
+function receiveFromAppSafe(text){
+  if(typeof text !== "string"){
+    console.log("[APP] invalid text");
+    return;
+  }
+
+  text = text.replace(/&&BS&&/g, "\\");
+  text = text.replace(/&&NL&&/g, "\n");
+  text = text.replace(/&&SQ&&/g, "'");
+
+  console.log("[APP] HTML length:", text.length);
+  rawData(text);
+}
+
+</script>
+
+</body>
+</html>

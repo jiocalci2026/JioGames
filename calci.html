@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Calculator</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #f2f2f7;
+  font-family: Arial, sans-serif;
+}
+
+/* FULL WRAPPER */
+.calc-wrapper {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* DISPLAY (40%) */
+.display {
+  height: 40vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+}
+
+.expression {
+  font-size: 16px;
+  color: #999;
+  text-align: right;
+}
+
+.result {
+  font-size: 50px;
+  text-align: right;
+}
+
+/* KEYPAD (60%) */
+.keypad {
+  height: 60vh;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 10px;
+}
+
+/* ROUND BUTTONS */
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px;
+  font-size: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+
+.key:active {
+  background: #ddd;
+}
+
+.key-op {
+  background: #ff9500;
+  color: #fff;
+}
+
+.key-eq {
+  background: #28a745;
+  color: white;
+}
+
+.key-func {
+  background: #e5e5ea;
+}
+
+.key-zero {
+  grid-column: span 2;
+  border-radius: 30px;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.toast.show {
+  opacity: 1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="calc-wrapper">
+
+  <div class="display">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <div class="keypad">
+
+    <div class="key key-func" onclick="pressKey('ac')">C</div>
+    <div class="key key-func" onclick="pressKey('sign')">+/−</div>
+    <div class="key key-func" onclick="pressKey('percent')">%</div>
+    <div class="key key-op" onclick="pressKey('÷')">÷</div>
+
+    <div class="key" onclick="pressKey('7')">7</div>
+    <div class="key" onclick="pressKey('8')">8</div>
+    <div class="key" onclick="pressKey('9')">9</div>
+    <div class="key key-op" onclick="pressKey('×')">×</div>
+
+    <div class="key" onclick="pressKey('4')">4</div>
+    <div class="key" onclick="pressKey('5')">5</div>
+    <div class="key" onclick="pressKey('6')">6</div>
+    <div class="key key-op" onclick="pressKey('−')">−</div>
+
+    <div class="key" onclick="pressKey('1')">1</div>
+    <div class="key" onclick="pressKey('2')">2</div>
+    <div class="key" onclick="pressKey('3')">3</div>
+    <div class="key key-op" onclick="pressKey('+')">+</div>
+
+    <div class="key key-zero" onclick="pressKey('0')">0</div>
+    <div class="key key-func" onclick="pressKey('.')">.</div>
+    <div class="key key-eq" onclick="pressKey('=')">=</div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let displayVal = "0";
+let expression = "";
+let operand1 = null;
+let operator = null;
+let newEntry = true;
+let pinBuffer = "";
+
+const savedPin = localStorage.getItem("calci_password") || "";
+const lockOn = localStorage.getItem("lock") === "true";
+
+/* BUTTON PRESS */
+function pressKey(k) {
+
+  if (k === 'ac') { clearAll(); return; }
+
+  if ('0123456789'.includes(k)) {
+
+  if (newEntry) {
+    displayVal = k;
+    pinBuffer = k;
+    newEntry = false;
+  } else {
+    displayVal += k;
+    pinBuffer += k;
+  }
+
+  // 🔐 INSTANT UNLOCK
+  if (lockOn && savedPin.length === 4 && pinBuffer.length === 4) {
+
+    if (pinBuffer === savedPin) {
+      showToast("Unlocked");
+      setTimeout(() => window.location.href = "home.html", 300);
+      return;
+    } else {
+      pinBuffer = "";
+    }
+  }
+}
+
+  else if (k === '.') {
+    if (!displayVal.includes('.')) displayVal += '.';
+    pinBuffer = "";
+  }
+
+  else if (k === 'sign') {
+    displayVal = displayVal.startsWith('-') ? displayVal.slice(1) : '-' + displayVal;
+    pinBuffer = "";
+  }
+
+  else if (k === 'percent') {
+    displayVal = String(parseFloat(displayVal) / 100);
+    pinBuffer = "";
+  }
+
+  else if (['+','−','×','÷'].includes(k)) {
+    operand1 = parseFloat(displayVal);
+    operator = k;
+    expression = displayVal + " " + k;
+    newEntry = true;
+    pinBuffer = "";
+  }
+
+  else if (k === '=') {
+    let v = parseFloat(displayVal);
+
+    // PIN direct match
+    if (lockOn && savedPin.length === 4) {
+      if (pinBuffer === savedPin || String(v) === savedPin) {
+        showToast("Unlocked");
+        setTimeout(() => window.location.href = "home.html", 500);
+        return;
+      }
+    }
+
+    // Normal calc
+    if (operand1 !== null && operator) {
+      let res = compute(operand1, v, operator);
+      displayVal = String(res);
+      expression = "";
+      operand1 = null;
+      operator = null;
+      newEntry = true;
+      pinBuffer = "";
+    }
+  }
+
+  render();
+}
+
+/* CALC */
+function compute(a, b, op) {
+  if (op === '+') return a + b;
+  if (op === '−') return a - b;
+  if (op === '×') return a * b;
+  if (op === '÷') return b === 0 ? 0 : a / b;
+}
+
+/* CLEAR */
+function clearAll() {
+  displayVal = "0";
+  expression = "";
+  operand1 = null;
+  operator = null;
+  newEntry = true;
+  pinBuffer = "";
+  render();
+}
+
+/* RENDER */
+function render() {
+  document.getElementById("result").innerText = displayVal;
+  document.getElementById("expression").innerText = expression;
+}
+
+/* TOAST */
+function showToast(msg) {
+  let t = document.getElementById("toast");
+  t.innerText = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 1500);
+}
+</script>
+
+</body>
+</html>

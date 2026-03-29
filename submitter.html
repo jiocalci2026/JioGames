@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submitter</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: transparent;
+        }
+        .submitter-container {
+            background: #ffffff;
+            width: 100%;
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box; /* Important: includes padding in width */
+        }
+        .header-row, .data-row, .totals-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .header-row {
+            font-weight: bold;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+        #data-rows {
+            margin-bottom: 5px;
+        }
+        .data-row {
+            background: #f9f9f9;
+            padding: 5px;
+            padding-left: 10px;
+            border-radius: 12px;
+            margin-bottom: 4px;
+        }
+        .delete-btn, .delete-all-btn {
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .delete-all-btn {
+            justify-self: end;
+        }
+        .totals-row {
+            background: #e6f7ff;
+            padding: 5px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            grid-template-columns: 1fr 1fr auto;
+        }
+        .totals-row > div {
+            display: flex;
+            justify-content: center;
+        }
+        .totals-row > div:last-child {
+            justify-content: flex-end;
+        }
+        .left-points {
+            text-align: right;
+            margin-top: 5px;
+            font-size: 0.8rem;
+        }
+        .submit-btn {
+            margin-top: 12px;
+            width: 100%;
+            background: linear-gradient(135deg, #095f0d, #05bd80);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="submitter-container" id="submitter">
+    <div class="header-row">
+        <div>Numbers</div>
+        <div>Points</div>
+        <button class="delete-all-btn" onclick="deleteAll()">Delete All</button>
+    </div>
+    <div id="data-rows">
+        <!-- Dynamic Rows will be inserted here -->
+    </div>
+    <div class="totals-row">
+        <div>Total :&nbsp;<span id="total-numbers">0</span></div>
+        <div>Points :&nbsp;<span id="total-points">0</span></div>
+        <div></div> <!-- Empty for alignment -->
+    </div>
+    <div class="left-points">
+        Left Points :&nbsp;<span id="left-points">0</span>
+    </div>
+    <button class="submit-btn">Submit Data</button>
+</div>
+
+<script>
+    // Global Variables on window scope
+    window.numbers = [];
+    window.points = [];
+    window.userBalance = localStorage.getItem("pts");;
+
+    window.initializeSubmitter = function(nums, pts, balance) {
+    window.userBalance = balance;
+
+    nums.forEach((num, index) => {
+        const existingIndex = window.numbers.indexOf(num);
+        if (existingIndex !== -1) {
+            // Number already exists -> Update points
+            window.points[existingIndex] = pts[index];
+        } else {
+            // New number -> Add it
+            window.numbers.push(num);
+            window.points.push(pts[index]);
+        }
+    });
+
+    renderData();
+}
+
+
+    function renderData() {
+        const dataRows = document.getElementById('data-rows');
+        dataRows.innerHTML = ''; // Clear existing
+
+        let totalPoints = 0;
+
+        window.numbers.forEach((num, index) => {
+            totalPoints += window.points[index];
+
+            const row = document.createElement('div');
+            row.className = 'data-row';
+            row.innerHTML = `
+                <div>${num}</div>
+                <div>${window.points[index]}</div>
+                <button class="delete-btn" onclick="deleteRow(${index})">Delete</button>
+            `;
+            dataRows.appendChild(row);
+        });
+
+        document.getElementById('total-numbers').textContent = window.numbers.length;
+        document.getElementById('total-points').textContent = totalPoints;
+        document.getElementById('left-points').textContent = window.userBalance - totalPoints;
+    }
+
+    window.deleteRow = function(index) {
+        window.numbers.splice(index, 1);
+        window.points.splice(index, 1);
+        renderData();
+    }
+
+    window.deleteAll = function() {
+        window.numbers = [];
+        window.points = [];
+        renderData();
+    }
+
+document.querySelector(".submit-btn").addEventListener("click", () => {
+
+    const combined = window.numbers.map((num, index) => [num, window.points[index]]);
+    combined.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+
+    const sortedNumbers = combined.map(pair => pair[0]);
+    const sortedPoints = combined.map(pair => pair[1]);
+
+    if (
+        sortedNumbers.length === sortedPoints.length &&
+        sortedNumbers.length > 0
+    ) {
+        const totalPoints = sortedPoints.reduce((a, b) => a + b, 0);
+        const leftPoints = window.userBalance - totalPoints;
+
+        if (leftPoints >= 0) {
+            localStorage.setItem("NL", JSON.stringify(sortedNumbers));
+            localStorage.setItem("PL", JSON.stringify(sortedPoints));
+            deleteAll(); // Clears UI
+            window.location.href = "auth-play.html";
+            //window.open("auth-play.html", "_blank"); // Open new window
+        } else {
+            alert("Not enough balance to play. Please reduce your points.");
+        }
+    } else {
+        alert("No valid number-point pairs found.");
+    }
+});
+
+
+
+</script>
+
+</body>
+</html>

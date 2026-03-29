@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History Viewer</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      margin: 10;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    .card {
+      width: 90%;
+      margin: 10px auto;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      background: #ffffff;
+    }
+
+    .title-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: darkgray;
+    }
+
+    .center-text {
+      text-align: center;
+    }
+
+    .arrow {
+      font-size: 24px;
+      cursor: pointer;
+      margin: 0 20px;
+      user-select: none;
+    }
+
+    .history-entry {
+      width: 90%;
+      background-color: white;
+      margin: 10px auto;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .title-text {
+      font-size: 15px;
+      font-weight: bold;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+
+    .subdata-text {
+      font-size: 14px;
+      margin-top: 6px;
+      white-space: pre-wrap;
+      text-align: center;
+    }
+
+    .no-history {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="titleCard" class="card title-bar">
+    <div class="title">HISTORY</div>
+    <div class="subtitle" id="userInfo">Loading...</div>
+  </div>
+
+  <div id="dateCard" class="card center-text">
+    <span id="prevArrow" class="arrow" onclick="changeDate(-1)">&#8592;</span>
+    <span id="currentDateText">Loading...</span>
+    <span id="nextArrow" class="arrow" onclick="changeDate(1)">&#8594;</span>
+  </div>
+
+  <div id="historyContainer"></div>
+
+  <script src="config.js"></script>
+  <script src="theme.js"></script>
+
+  <script>
+    /* ================= USER INFO ================= */
+    const username = localStorage.getItem("username") || "Not Found";
+    const mobile   = localStorage.getItem("mobile") || "Not Found";
+    const userid   = localStorage.getItem("userid") || "default";
+    document.getElementById("userInfo").textContent = `${username}, ${mobile}`;
+
+    /* ================= THEME APPLY ================= */
+    const cfg = window.AppConfig;
+    const c1  = cfg.mainColor1;
+    const c2  = cfg.mainColor2;
+
+    if (cfg.backgroundSVG && cfg.backgroundSVG.useSVG) {
+      document.body.style.backgroundImage = `url('${cfg.backgroundSVG.svgPath}')`;
+      document.body.style.backgroundRepeat = cfg.backgroundSVG.repeat ? "repeat" : "no-repeat";
+      document.body.style.backgroundAttachment = "fixed";
+    } else if (cfg.useGradient) {
+      document.body.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+    } else {
+      document.body.style.background = "#f4f4f4";
+    }
+
+    /* ================= FIREBASE INIT ================= */
+    const FU = localStorage.getItem("FU");
+    const FT = localStorage.getItem("FT");
+
+    if (!FU || !FT) {
+      console.error("Missing Firebase keys");
+    } else {
+      firebase.initializeApp({ apiKey: FT, databaseURL: FU });
+     setTimeout(() => {
+    initHistory();
+  }, 200);
+    }
+
+    /* ================= DATE UTILS ================= */
+    function formatDate(d) {
+  const yyyy = d.getFullYear();
+  const mm   = String(d.getMonth() + 1).padStart(2, '0');
+  const dd   = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+
+    function getCacheKey(dateStr) {
+      return `HISTORY_CACHE_${dateStr}_${userid}`;
+    }
+
+    function getLastKeyKey(dateStr) {
+      return `HISTORY_LASTKEY_${dateStr}_${userid}`;
+    }
+
+    // NEW: Function to get fully loaded dates tracking key
+    function getFullyLoadedKey() {
+      return `HISTORY_FULLY_LOADED_${userid}`;
+    }
+
+    // NEW: Function to check if date is fully loaded
+    function isDateFullyLoaded(dateStr) {
+      const key = getFullyLoadedKey();
+      const fullyLoaded = JSON.parse(localStorage.getItem(key) || "[]");
+      return fullyLoaded.includes(dateStr);
+    }
+
+    // NEW: Function to mark date as fully loaded
+    function markDateAsFullyLoaded(dateStr) {
+      const key = getFullyLoadedKey();
+      const fullyLoaded = JSON.parse(localStorage.getItem(key) || "[]");
+      if (!fullyLoaded.includes(dateStr)) {
+        fullyLoaded.push(dateStr);
+        localStorage.setItem(key, JSON.stringify(fullyLoaded));
+      }
+    }
+
+    function isToday(dateStr) {
+      return dateStr === formatDate(new Date());
+    }
+
+    let currentDate = new Date(
+      parseInt(localStorage.getItem("timestamp") || Date.now())
+    );
+
+    function changeDate(offset) {
+      currentDate.setDate(currentDate.getDate() + offset);
+      loadHistory();
+    }
+
+    function updateArrows() {
+      const today = new Date();
+      const diff = Math.floor((today - currentDate) / (1000 * 60 * 60 * 24));
+
+      prevArrow.style.display = diff >= 7 ? "none" : "inline";
+      nextArrow.style.display = diff <= 0 ? "none" : "inline";
+    }
+
+    function cleanupOldCache() {
+      for (let i = 8; i <= 60; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = getCacheKey(formatDate(d));
+        const lastKey = getLastKeyKey(formatDate(d));
+        localStorage.removeItem(key);
+        localStorage.removeItem(lastKey);
+      }
+    }
+
+    /* ================= MAIN HISTORY LOADER ================= */
+    function loadHistory() {
+      cleanupOldCache();
+      updateArrows();
+
+      const dateStr = formatDate(currentDate);
+      document.getElementById("currentDateText").textContent = dateStr;
+
+      const container = document.getElementById("historyContainer");
+      container.innerHTML = "Loading...";
+
+      const cacheKey = getCacheKey(dateStr);
+      const lastKeyKey = getLastKeyKey(dateStr);
+
+      // MODIFIED: OLD DATE LOGIC (1–7 days)
+      if (!isToday(dateStr)) {
+        // Check if this date is already fully loaded
+        if (isDateFullyLoaded(dateStr)) {
+          // Date is fully loaded, show from cache
+          const cachedData = localStorage.getItem(cacheKey);
+          if (cachedData) {
+            try {
+              renderHistoryEntries(JSON.parse(cachedData));
+              return;
+            } catch {}
+          }
+        } else {
+          // Date is NOT fully loaded, fetch ALL data from Firebase
+          firebase.database().ref(`HISTORY/${dateStr}/${userid}`).orderByKey().once("value", snapshot => {
+            let entries = [];
+            snapshot.forEach(child => {
+              entries.push({ key: child.key, value: child.val() });
+            });
+            
+            // Save to cache and mark as fully loaded
+            localStorage.setItem(cacheKey, JSON.stringify(entries));
+            markDateAsFullyLoaded(dateStr);
+            renderHistoryEntries(entries);
+          });
+          return;
+        }
+      }
+
+      // TODAY SMART FETCH (unchanged)
+      let ref = firebase.database().ref(`HISTORY/${dateStr}/${userid}`).orderByKey();
+
+      const lastKey = localStorage.getItem(lastKeyKey);
+      if (isToday(dateStr) && lastKey) {
+        ref = ref.startAfter(lastKey);
+      }
+
+      ref.once("value", snapshot => {
+        let entries = [];
+
+        const oldCache = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+
+        snapshot.forEach(child => {
+          entries.push({ key: child.key, value: child.val() });
+        });
+
+        if (isToday(dateStr)) {
+          if (entries.length > 0) {
+            const merged = oldCache.concat(entries);
+            localStorage.setItem(cacheKey, JSON.stringify(merged));
+            localStorage.setItem(lastKeyKey, entries[entries.length - 1].key);
+            renderHistoryEntries(merged);
+          } else {
+            // No new data, show old cached data
+            renderHistoryEntries(oldCache);
+          }
+        } else {
+          localStorage.setItem(cacheKey, JSON.stringify(entries));
+          renderHistoryEntries(entries);
+        }
+
+      });
+    }
+
+    /* ================= RENDER HISTORY ENTRIES ================= */
+    function renderHistoryEntries(entries) {
+      const container = document.getElementById("historyContainer");
+      container.innerHTML = "";
+
+      if (!entries || entries.length === 0) {
+        container.innerHTML =
+          `<div class="no-history">No history found for this date.</div>`;
+        return;
+      }
+
+      entries.reverse().forEach(entry => {
+        const rawVal = entry.value;
+        if (typeof rawVal !== "string") return;
+
+        const raw = rawVal.replaceAll('"', "").trim();
+        const [titleRaw, subRaw] = raw.split("&&");
+
+        const titleText = titleRaw.split("&").slice(0, -1).join("\n");
+
+        let color = "black";
+        if (titleText.includes("Point Played")) color = "orange";
+        else if (titleText.includes("Won")) color = "green";
+        else if (titleText.includes("Point Added")) color = "blue";
+        else if (titleText.includes("Withdraw")) color = "red";
+
+        const subText = subRaw ? subRaw.split("&").join("\n") : "";
+
+        const div = document.createElement("div");
+        div.className = "history-entry";
+        div.innerHTML = `
+          <div class="title-text" style="color:${color};">${titleText}</div>
+          <div class="subdata-text">${subText}</div>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    function initHistory() {
+      loadHistory();
+    }
+  </script>
+</body>
+</html>

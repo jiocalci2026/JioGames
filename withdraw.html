@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Withdraw Amount</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+
+<style>
+*{box-sizing:border-box;font-family:'Poppins',sans-serif}
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  transition: background 0.5s ease;
+  background-color: #f0f0f0;
+  overflow: hidden;   /* 🔒 VERY IMPORTANT */
+}
+.page{
+  height: 100vh;      /* 🔑 fixed viewport */
+  overflow-y: auto;   /* scroll ONLY here */
+  padding:16px;
+}
+
+/* HEADER */
+.topbar{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:12px;
+  align-items:center;
+  padding:14px 16px;
+  border-radius:16px;
+  color:#fff;
+  background:var(--bar-bg);
+}
+.topbar-left{
+  display:grid;
+  grid-template-columns:34px auto;
+  gap:10px;
+  align-items:center;
+}
+.topbar-left img{width:34px;height:34px}
+.title-wrap h2{margin:0;font-size:17px;font-weight:500}
+.points{font-size:13px;opacity:.9}
+.topbar-right{text-align:right;font-size:13px;line-height:1.4}
+
+/* NOTICE */
+.notice{
+  margin-top:12px;
+  background:#fff;
+  border-radius:14px;
+  padding:12px 14px;
+  font-size:13px;
+  color:#444;
+}
+
+/* CARD */
+.card{
+  margin-top:14px;
+  background:#fff;
+  padding:18px;
+  border-radius:18px;
+}
+
+/* FIELD */
+.field{position:relative;margin-bottom:18px}
+.field label{
+  position:absolute;
+  top:-8px;
+  left:12px;
+  background:#fff;
+  padding:0 6px;
+  font-size:12px;
+  color:#777;
+}
+.field input{
+  width:100%;
+  padding:14px 12px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  font-size:15px;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:16px;
+  font-size:15px;
+  font-weight:500;
+  cursor:pointer;
+}
+button:disabled{opacity:.7;cursor:not-allowed}
+
+/* PROGRESS BUTTON */
+button.progress{
+  position:relative;
+  overflow:hidden;
+  color:#222;
+}
+button.progress span{position:relative;z-index:2}
+button.progress::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  width:0%;
+  background:linear-gradient(90deg,#01642a,#02ac0b,#1cee00);
+  transition:width 1s ease-in-out;
+  z-index:1;
+}
+button.progress.loading::before{width:80%}
+button.progress.done::before{width:100%}
+button.progress.loading,
+button.progress.done{
+  color:#fff;
+  text-shadow:1px 1px 2px #000;
+}
+
+/* SNACKBAR */
+.snackbar{
+  visibility:hidden;
+  background:rgb(223, 0, 0);   /* solid dark */
+  color:#ffffff;                /* pure white text */
+  padding:14px 18px;
+  border-radius:14px;
+  position:fixed;
+  left:50%;
+  bottom:30px;
+  transform:translateX(-50%);
+  font-size:14px;
+  font-weight:500;
+  z-index:9999;                  /* ALWAYS on top */
+  box-shadow:0 6px 18px rgba(0,0,0,0.35);
+  max-width:90%;
+  text-align:center;
+}
+.snackbar.show{
+  visibility:visible;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="page" id="page">
+
+  <div class="topbar" id="topbar">
+    <div class="topbar-left">
+      <img src="assets/logo.png">
+      <div class="title-wrap">
+        <h2>Withdraw Amount</h2>
+        <div class="points">💰 Points: <span id="pts">0</span></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div id="username"></div>
+      <div id="mobile"></div>
+    </div>
+  </div>
+
+  <div class="notice" id="wmsg"></div>
+
+  <div class="card">
+    <div id="fields"></div>
+
+    <div class="field">
+      <label>Withdraw Points</label>
+      <input type="number" id="withdrawAmount">
+    </div>
+
+    <button id="submitBtn" class="progress">
+      <span>Submit Request</span>
+    </button>
+  </div>
+</div>
+
+<div id="snackbar" class="snackbar"></div>
+
+<script src="theme.js"></script>
+
+<script>
+/* BASIC */
+const dbURL  = localStorage.getItem("FU");
+const userid = localStorage.getItem("userid");
+const usernamereal = localStorage.getItem("username") || "";
+const usermobile = localStorage.getItem("mobile") || "";
+username.innerText = localStorage.getItem("username") || "";
+mobile.innerText   = usermobile;
+wmsg.innerText     = localStorage.getItem("W msg") || "";
+
+let localPts = Number(localStorage.getItem("pts") || 0);
+pts.innerText = localPts;
+
+topbar.style.setProperty("--bar-bg", AppConfig.mainColor1);
+submitBtn.disabled = true;
+
+
+/* LOAD WIW + WD */
+fetch(`${dbURL}/WIW.json`)
+.then(r=>r.json())
+.then(wiw=>{
+  return fetch(`${dbURL}/WD/${userid}.json`)
+    .then(r=>r.json())
+    .then(wd=>({wiw,wd}));
+})
+.then(({wiw,wd})=>{
+  fields.innerHTML="";
+  Object.keys(wiw).forEach(k=>{
+    if(!/^\d+$/.test(k)) return;
+
+    const label = String(wiw[k]).replace(/^"+|"+$/g,"");
+    const isUPI = /upi/i.test(label);
+    const isNum = /number/i.test(label);
+
+    let val = String(wd?.[k] ?? "").replace(/^"+|"+$/g,"");
+    if(isNum && /^[OPQRSTUVWX]+$/.test(val)){
+      try{val=AppUtils.decryptMobile(val)}catch{}
+    }
+
+    fields.innerHTML += `
+      <div class="field">
+        <label>${label}</label>
+        <input data-upi="${isUPI}" type="${isNum?'number':'text'}" value="${val}">
+      </div>`;
+  });
+  attachFilters();
+  submitBtn.disabled = false;
+});
+
+/* SERVER TIME */
+let serverTime = Date.now();
+fetch(`${dbURL}/TIMESTAMP.json`,{
+  method:"PATCH",
+  body:JSON.stringify({timestamps:{".sv":"timestamp"}})
+})
+.then(()=>fetch(`${dbURL}/TIMESTAMP/timestamps.json`))
+.then(r=>r.json())
+.then(ts=>{
+  serverTime = Number(ts || Date.now());
+  setInterval(()=>serverTime+=1000,1000);
+});
+
+/* INPUT FILTER */
+function attachFilters(){
+  document.querySelectorAll("#fields input").forEach(i=>{
+    i.addEventListener("input",()=>{
+      if(i.type==="number") i.value=i.value.replace(/\D/g,"");
+      else if(i.dataset.upi==="true") i.value=i.value.replace(/[^a-zA-Z0-9@.]/g,"");
+      else i.value=i.value.replace(/[!@#$%^&*()\-_=+]/g,"");
+    });
+  });
+}
+
+/* VALIDATION */
+function validateWithdraw(currentPts, amount, dateObj){
+  const minW  = Number(localStorage.getItem("M Wiw") || 0);
+  const maxW  = Number(localStorage.getItem("MaxW") || Infinity);
+  const safe  = Number(localStorage.getItem("Safe Points") || 0);
+  const wTime = localStorage.getItem("Withdraw");
+  const wMsg  = localStorage.getItem("W msg") || "";
+
+  if(amount < minW) return `Minimum Withdraw Amount = ${minW}`;
+  if(amount > maxW) return `Maximum Withdraw Amount = ${maxW}`;
+  if(currentPts - amount < safe) return `Maintain ${safe} safe points`;
+
+  if(wTime && wTime !== "ON"){
+    if(wTime === "OFF") return wMsg || "Withdraw is closed";
+    if(wTime.includes("TO")){
+      const [from,to] = wTime.split("TO");
+      const now = dateObj.toTimeString().slice(0,8);
+      if(now < from || now > to)
+        return "Withdraw Time is between 5 Am to 10.30 Am";
+    }
+  }
+  return "";
+}
+
+/* SUBMIT */
+submitBtn.onclick = async ()=>{
+  for(const i of document.querySelectorAll("#fields input")){
+    if(!i.value.trim()) return snack("All fields are required");
+  }
+
+  const amount = Number(withdrawAmount.value);
+  if(!amount) return snack("Enter withdraw amount");
+
+  const dateObj = new Date(serverTime);
+  const yyyy = dateObj.getFullYear();
+const mm   = String(dateObj.getMonth()+1).padStart(2,'0');
+const dd   = String(dateObj.getDate()).padStart(2,'0');
+const date = `${yyyy}-${mm}-${dd}`;
+
+  /* DAILY LIMIT */
+  const limit = Number(localStorage.getItem("DWL")||0);
+  let dwlc = JSON.parse(localStorage.getItem("DWLC")||"{}");
+  Object.keys(dwlc).forEach(d=>{ if(d!==date) delete dwlc[d]; });
+  if(limit && (dwlc[date]||0)>=limit)
+    return snack("Daily withdraw limit reached");
+
+  let err = validateWithdraw(localPts, amount, dateObj);
+  if(err) return snack(err);
+
+  const serverPts = await fetch(`${dbURL}/USERS/${userid}/pts.json`)
+    .then(r=>r.json())
+    .then(p=>Number(String(p||"").replace(/"/g,"")));
+
+  if(serverPts !== localPts){
+    err = validateWithdraw(serverPts, amount, dateObj);
+    if(err) return snack(err);
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.classList.add("loading");
+  submitBtn.querySelector("span").innerText = "Submitting";
+
+  const hh24 = dateObj.toTimeString().slice(0,8);
+  const hh12 = dateObj.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true});
+  const rand = Math.floor(100+Math.random()*900);
+
+  const updates = {};
+  updates[`USERS/${userid}/pts`] = serverPts - amount;
+
+  let adminMsg = `Name : ${username.innerText}&&Mobile : ${mobile.innerText}&&`;
+  const wdObj = {};
+
+  document.querySelectorAll("#fields .field").forEach((f,i)=>{
+    const label = f.querySelector("label").innerText;
+    let v = f.querySelector("input").value;
+    if(/number/i.test(label)) v = AppUtils.encryptMobile(v);
+    wdObj[i+1] = `"${v}"`;
+    adminMsg += `${label} : ${v}&&`;
+  });
+
+  adminMsg += `amountt : ${amount}&&Left Points : ${serverPts-amount}&&D : ${date} ${hh12}`;
+
+  updates[`WR/${date}&${hh24}&${userid}&${rand}`] = `"${adminMsg}"`;
+  updates[`HISTORY/${date}/${userid}/${date}&${hh24}&${rand}`] =
+    `"Withdraw Request Sent&Remaining Points : ${serverPts} - ${amount} = ${serverPts-amount}&${date} ${hh12}&-3407872"`;
+
+  updates[`WD/${userid}`] = wdObj;
+
+  fetch(`${dbURL}/.json`,{
+    method:"PATCH",
+    body:JSON.stringify(updates)
+  }).then(()=>{
+    dwlc[date]=(dwlc[date]||0)+1;
+    localStorage.setItem("DWLC",JSON.stringify(dwlc));
+    console.log(`Notification=Withdraw Request : ₹${amount}||&||${usernamereal} : ${usermobile}`)
+    submitBtn.classList.remove("loading");
+    submitBtn.classList.add("done");
+    submitBtn.querySelector("span").innerText="Sent Successfully";
+    setTimeout(()=>history.back(),1000);
+  });
+};
+
+function snack(m){
+  snackbar.innerText=m;
+  snackbar.className="snackbar show";
+  setTimeout(()=>snackbar.className="",3000);
+}
+</script>
+
+</body>
+</html>

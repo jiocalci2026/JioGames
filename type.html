@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Type Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  transition: background 0.5s ease;
+  background-color: #f0f0f0;
+
+  /* 🔒 lock body */
+  overflow: hidden;
+}
+
+        .title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .toggle-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .toggle-button {
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .option-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+        }
+        .option-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px;
+            background-color: #fff;
+            transition: transform 0.2s ease;
+        }
+        .option-card img {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        .page-scroll {
+  height: 100vh;        /* 🔑 fixed viewport height */
+  overflow-y: auto;     /* scroll ONLY here */
+  padding: 20px;
+}
+
+    </style>
+</head>
+<body>
+<div class="page-scroll">
+
+    <div class="title-bar" id="titleBar">
+      <div id="marketName">...</div>
+      <div id="currentTime">--:--:--</div>
+    </div>
+
+    <div class="toggle-buttons">
+      <div class="toggle-button" id="openBtn">Open</div>
+      <div class="toggle-button" id="closeBtn">Close</div>
+    </div>
+
+    <div class="option-cards" id="optionCards"></div>
+
+  </div>
+
+    <script src="config.js"></script>
+    <script src="theme.js"></script>
+    <script>
+        // AppConfig Variables
+        const isGradient = AppConfig.useGradient;
+        const color1 = AppConfig.mainColor1;
+        const color2 = AppConfig.mainColor2;
+
+        // Subtype List
+        const subtypes = [
+            'Single Digit', 'Jodi Digit', 'Bulk Jodi', 'Cross Jodi', 'Single Panel',
+            'Double Panel', 'Triple Panel', 'Ank SPDPTP', 'Motor Patti', 'Cycle Patti',
+            'Any Patti', 'Family Patti', 'Half Sangam', 'Full Sangam'
+        ];
+
+        let marketName = localStorage.getItem('marketName') || 'NA';
+        let marketType = localStorage.getItem('marketType') || 'Open';
+        let timestamp = parseInt(localStorage.getItem('timestamp')) || Date.now();
+        let subtype = 'Open';
+
+        const titleBar = document.getElementById('titleBar');
+        const marketNameEl = document.getElementById('marketName');
+        const currentTimeEl = document.getElementById('currentTime');
+        const openBtn = document.getElementById('openBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        const optionCards = document.getElementById('optionCards');
+
+        function applyTheme() {
+
+    // 🔹 SVG background has highest priority
+    if (AppConfig.backgroundSVG && AppConfig.backgroundSVG.useSVG === true) {
+
+        // BODY background already handled by theme.js
+        // yahan sirf readable UI set karna hai
+        
+
+        titleBar.style.background = "#ffffff";
+        marketNameEl.style.color = color1;
+        currentTimeEl.style.color = color1;
+
+        marketNameEl.style.textShadow = "none";
+        currentTimeEl.style.textShadow = "none";
+
+        return; // ⛔ stop further overrides
+    }
+
+    // 🔹 Existing logic (UNCHANGED)
+    if (isGradient) {
+        
+        titleBar.style.background = '#fff';
+        marketNameEl.style.color = color1;
+        currentTimeEl.style.color = color1;
+    } else {
+       
+        titleBar.style.background = color1;
+        marketNameEl.style.color = '#fff';
+        currentTimeEl.style.color = '#fff';
+        marketNameEl.style.textShadow = '1px 1px 2px #000';
+        currentTimeEl.style.textShadow = '1px 1px 2px #000';
+    }
+}
+
+
+        function formatTime(ts) {
+            const date = new Date(ts);
+            let hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            return `${hours.toString().padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+        }
+
+        function updateOptionCards() {
+            optionCards.innerHTML = '';
+            subtypes.forEach(type => {
+                if (subtype === 'Close' && ['Jodi Digit', 'Bulk Jodi', 'Cross Jodi', 'Half Sangam', 'Full Sangam'].includes(type)) return;
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.style.boxShadow = `0 4px 6px ${color2}`;
+
+                const img = document.createElement('img');
+                img.src = `assets/${type.replace(/\s+/g, '')}.png`;
+                img.alt = type;
+
+                const text = document.createElement('div');
+                text.textContent = type;
+                text.style.color = '#000';
+
+                card.appendChild(img);
+                card.appendChild(text);
+
+                card.addEventListener('click', () => {
+                    localStorage.setItem("marketName", marketName);
+                    localStorage.setItem("marketType", subtype);
+                    localStorage.setItem("marketSubtype", type);
+                    if (["Single Digit", "Jodi Digit", "Single Panel","Double Panel","Triple Panel"].includes(type)) {
+                        window.location.href = "normalplay.html";}
+                    if (["Bulk Jodi", "Cross Jodi", "Ank SPDPTP","Motor Patti","Cycle Patti"].includes(type)) {
+                        window.location.href = "bulkplay.html";}
+                    if (["Half Sangam", "Full Sangam", "Any Patti", "Family Patti"].includes(type)) {
+                        window.location.href = "sangam.html";}
+
+                });
+
+                optionCards.appendChild(card);
+            });
+        }
+
+        function updateToggleButtons() {
+            if (marketType === 'Close') {
+                openBtn.style.display = 'none';
+                subtype = 'Close';
+            } else {
+                openBtn.style.display = 'inline-block';
+            }
+            const buttons = [openBtn, closeBtn];
+            buttons.forEach(btn => {
+                if (btn.textContent === subtype) {
+                    btn.style.background = color1;
+                    btn.style.color = '#fff';
+                    btn.style.textShadow = '1px 1px 2px #000';
+                    btn.style.boxShadow = '0 4px 6px #fff';
+                } else {
+                    btn.style.background = '#fff';
+                    btn.style.color = '#000';
+                    btn.style.textShadow = 'none';
+                    btn.style.boxShadow = `0 4px 6px ${color2}`;
+                }
+            });
+        }
+
+        openBtn.addEventListener('click', () => {
+            subtype = 'Open';
+            updateToggleButtons();
+            updateOptionCards();
+        });
+        closeBtn.addEventListener('click', () => {
+            subtype = 'Close';
+            updateToggleButtons();
+            updateOptionCards();
+        });
+
+        function checkLocalStorageUpdates() {
+            const newMarketName = localStorage.getItem('marketName');
+            const newMarketType = localStorage.getItem('marketType');
+            const newTimestamp = parseInt(localStorage.getItem('timestamp'));
+            marketNameEl.textContent = marketName;
+
+            if (newMarketName !== marketName) {
+                marketName = newMarketName;
+                marketNameEl.textContent = marketName;
+                subtype = 'Open';
+                updateToggleButtons();
+                updateOptionCards();
+            }
+
+            if (newMarketType !== marketType) {
+                marketType = newMarketType;
+                subtype = 'Open';
+                updateToggleButtons();
+                updateOptionCards();
+            }
+
+            if (newTimestamp !== timestamp) {
+                timestamp = newTimestamp;
+            }
+
+            currentTimeEl.textContent = formatTime(timestamp);
+        }
+
+        // Initialize
+        applyTheme();
+        updateToggleButtons();
+        updateOptionCards();
+        checkLocalStorageUpdates();
+        setInterval(() => {
+            timestamp = parseInt(localStorage.getItem('timestamp'));
+            currentTimeEl.textContent = formatTime(timestamp);
+        }, 1000);
+
+
+    </script>
+</body>
+</html>

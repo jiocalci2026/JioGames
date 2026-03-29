@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <title>Boss 95</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    html, body {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+}
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: hsl(231, 97%, 40%);
+      padding: 10px 15px;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.664);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    .logo img {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .app-name {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .wallet-card {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 8px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      color: black;
+      font-weight: bold;
+    }
+    .wallet-card img {
+      width: 24px;
+      height: 24px;
+      margin-right: 5px;
+    }
+    .wallet-balance {
+      font-size: 16px;
+    }
+    .scrollable-container {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  padding: 15px;
+  background: transparent;
+}
+
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .button-container .card {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 12px;
+      text-align: center;
+      font-weight: light;
+      font-size: 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      color: #0a0a0a;
+    }
+    .whatsapp {
+      background: linear-gradient(to right, #fbfdfc, #b0fcd0);
+    }
+    .telegram {
+      background: linear-gradient(to right, #feffff, #b2e0fd);
+    }
+    .group {
+      background: linear-gradient(to right, #effaf4, #b6fcd9);
+    }
+    .button-container img {
+      width: 20px;
+      height: 20px;
+    }
+    .large-card {
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-card {
+      height: 20vh;
+    }
+    .image-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .youtube-card {
+      position: relative;
+      padding-top: 56.25%;
+    }
+    .youtube-card iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .horizontal-cards {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .marquee-card {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .marquee-card marquee {
+      font-size: 14px;
+      font-weight: normal;
+      color: #333;
+    }
+    .clock-card {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(to right, #fefefe, #fde0f6);
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      font-size: 14px;
+      font-weight: light;
+      color: #0a0a0a;
+      white-space: nowrap;
+    }
+    .clock-card img {
+      width: 20px;
+      height: 20px;
+    }
+    .feature-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .feature-card {
+      flex: 1;
+      min-width: 22%;
+      background: white;
+      color:black;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+    }
+    .feature-card img {
+      width: 30px;
+      height: 30px;
+      margin-bottom: 2px;
+    }
+    .feature-card span {
+      font-size: 13px;
+      font-weight: lighter;
+      color: #333;
+      display: block;
+    }
+    .market-card {
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+    .market-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .market-header img {
+      width: 50px;
+      height: 50px;
+    }
+    .market-info {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    .market-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .market-name {
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+    }
+    .market-result {
+      color: #274df5;
+      font-size: 14px;
+      text-align: center;
+    }
+    .market-time {
+      font-size: 14px;
+      color: gray;
+      text-align: center;
+    }
+    .market-status {
+      text-align: center;
+      margin-top: 5px;
+      font-size: 14px;
+      color: green;
+    }
+    .chat-notify-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 15px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chat-notify-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.chat-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+}
+
+.chat-text {
+  flex: 1;
+}
+
+.chat-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+}
+
+.chat-subtitle {
+  font-size: 13px;
+  color: #555;
+}
+
+.chat-badge {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  background: #e53935;
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+  </style>
+</head>
+<body>
+
+  <!-- Title Bar -->
+  <div class="header" id="title-bar">
+    <div class="logo">
+      <img id="app-logo" src="" alt="Logo">
+      <span id="app-name" class="app-name"></span>
+    </div>
+    <div class="wallet-card">
+      <img src="https://cdn-icons-png.flaticon.com/128/584/584026.png" alt="Wallet">
+      <span class="wallet-balance" id="wallet-amount">0</span>
+    </div>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="scrollable-container" id="page-container">
+    
+    <!-- Cards -->
+    <div class="button-container">
+      <div class="card whatsapp" id="btn-whatsapp">
+        <img src="https://cdn-icons-png.flaticon.com/128/733/733585.png" alt="WhatsApp">
+        <span>WhatsApp</span>
+      </div>
+      <div class="card telegram" id="btn-telegram">
+        <img src="https://cdn-icons-png.flaticon.com/128/2111/2111644.png" alt="Telegram">
+        <span>Telegram</span>
+      </div>
+      <div class="card group" id="btn-group">
+        <img src="https://cdn-icons-png.flaticon.com/128/733/733585.png" alt="Group">
+        <span>Group</span>
+      </div>
+    </div>
+    <!-- 🔔 Live Group Chat Notification Card -->
+<div class="chat-notify-card" onclick="openGroupChat()">
+  <img src="assets/whatsapp.png" class="chat-logo" alt="WhatsApp">
+
+  <div class="chat-text">
+    <div class="chat-title">Live Group Chat</div>
+    <div class="chat-subtitle">New Message Received</div>
+  </div>
+
+  <div class="chat-badge" id="chat-unread">12</div>
+</div>
+
+
+    <!-- Banner Image -->
+<div class="large-card image-card" id="promo-image" style="display: none;">
+  <img id="promo-img-src" src="" alt="Promo Image">
+</div>
+
+<!-- YouTube Player -->
+<div class="large-card youtube-card" id="promo-video" style="display: none;">
+  <iframe id="promo-iframe" src="" allowfullscreen></iframe>
+</div>
+
+    <!-- Marquee + Clock -->
+    <div class="horizontal-cards">
+      <div class="marquee-card">
+        <marquee behavior="scroll" id="marquee-msg" direction="left">🔥 Welcome to Boss 95 Group! Stay updated with the latest news and trends. 🔥</marquee>
+      </div>
+      <div class="clock-card">
+        <img src="https://cdn-icons-png.flaticon.com/128/10473/10473481.png" alt="Clock">
+        <span id="live-time">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="feature-container">
+      <div class="feature-card" id="btn-deposit"><img src="https://cdn-icons-png.flaticon.com/128/6418/6418336.png" alt="Deposit"><span>Deposit</span></div>
+      <div class="feature-card" id="btn-withdraw"><img src="https://cdn-icons-png.flaticon.com/128/9590/9590117.png" alt="Withdraw"><span>Withdraw</span></div>
+      <div class="feature-card" id="btn-share"><img src="https://cdn-icons-png.flaticon.com/128/2099/2099122.png" alt="Share"><span>Share</span></div>
+      <div class="feature-card" id="btn-logout"><img src="https://cdn-icons-png.flaticon.com/128/10309/10309341.png" alt="Logout"><span>Logout</span></div>
+      <div class="feature-card" id="btn-history"><img src="https://cdn-icons-png.flaticon.com/128/4394/4394574.png" alt="History"><span>History</span></div>
+      <div class="feature-card" id="btn-profile"><img src="https://cdn-icons-png.flaticon.com/128/1999/1999625.png" alt="Profile"><span>Profile</span></div>
+      <div class="feature-card" id="btn-rates"><img src="https://cdn-icons-png.flaticon.com/128/1365/1365307.png" alt="Rates"><span>Rates</span></div>
+      <div class="feature-card" id="btn-settings"><img src="https://cdn-icons-png.flaticon.com/128/839/839395.png" alt="Settings"><span>Settings</span></div>
+    </div>
+
+    <div id="market-container"></div>
+  </div>
+<script src="config.js" ></script>
+<script src="theme.js"></script>
+
+<script>
+  const cfg = window.AppConfig;
+  const container = document.getElementById("page-container");
+  let db, globalusername, globalpts;
+
+  // Safety check
+  if (!cfg) {
+    console.error("AppConfig is not defined.");
+  } else {
+
+    //storing gradient setting
+    localStorage.setItem("isGradient", cfg.useGradient);
+    localStorage.setItem("Color1", cfg.mainColor1);
+    localStorage.setItem("Color2", cfg.mainColor2);
+    // Apply logo and app name
+    document.getElementById("app-logo").src = cfg.logoUrl;
+    document.getElementById("app-name").textContent = cfg.appName;
+    
+    // Apply background
+    
+    
+    // Apply background to container ONLY if SVG is OFF
+if (cfg.backgroundSVG && cfg.backgroundSVG.useSVG === true) {
+  /* SVG ON → container MUST be transparent */
+  container.style.background = "transparent";
+  container.style.backgroundImage = "none";
+  container.style.backgroundColor = "transparent";
+
+} else if (cfg.useGradient) {
+  /* SVG OFF + Gradient ON */
+  container.style.background =
+    `linear-gradient(135deg, ${cfg.mainColor1}, ${cfg.mainColor2})`;
+
+} else {
+  /* SVG OFF + Gradient OFF → white */
+  container.style.background = "#ffffff";
+}
+
+
+
+    // Title bar color
+    document.getElementById("title-bar").style.backgroundColor = cfg.mainColor1;
+
+    // Apply font family
+    document.body.style.fontFamily = cfg.fontFamily;
+
+    // Feature cards styling when gradient is disabled
+    const featureCards = document.querySelectorAll('.feature-card');
+    if (!cfg.useGradient) {
+      featureCards.forEach(card => {
+        card.style.setProperty('background', `linear-gradient(135deg, ${cfg.mainColor1}, ${cfg.mainColor2})`, 'important');
+        card.style.color = 'white';
+        card.style.textShadow = '0 1px 2px rgba(0, 0, 0, 0.6)';
+
+        const span = card.querySelector('span');
+        if (span) {
+          span.style.color = 'white';
+          span.style.textShadow = '0 1px 2px rgba(0, 0, 0, 0.6)';
+        }
+      });
+    }
+  }
+
+    const marquee = document.getElementById("marquee-msg");
+    const msg = localStorage.getItem("ln msg");
+
+    if (msg) { marquee.textContent = msg;}
+        marquee.onclick = () => {
+        const link = localStorage.getItem("ln url");
+           if(link){console.log(`ActivityStarter=url===${link}`)};
+        };
+
+
+function noticefetch(){
+
+  const imageLink = localStorage.getItem("notice image"); // adjust the key as needed
+  const youtubeLink = localStorage.getItem("yt video"); // adjust the key as needed
+
+// Show image banner if valid
+if (imageLink && imageLink.startsWith("http")) {
+  const promoImageDiv = document.getElementById("promo-image");
+  const promoImg = document.getElementById("promo-img-src");
+  promoImg.src = imageLink;
+  promoImageDiv.style.display = "block";
+}
+
+// Show YouTube iframe if valid
+if (youtubeLink && youtubeLink.includes("youtube.com")) {
+  const promoVideoDiv = document.getElementById("promo-video");
+  const promoIframe = document.getElementById("promo-iframe");
+
+  // Optional: extract video ID and reformat to embed link
+  const videoId = new URL(youtubeLink).searchParams.get("v");
+  if (videoId) {
+    promoIframe.src = `https://www.youtube.com/embed/${videoId}`;
+    promoVideoDiv.style.display = "block";
+  }
+}
+
+}
+
+
+   // Normal Card Click Action -->
+  // Helper: Add click handler to a set of elements
+  function addClickHandlers(selector, callback) {
+    document.querySelectorAll(selector).forEach((el, index) => {
+      el.addEventListener("click", () => {
+        callback(el, index);
+      });
+    });
+  }
+
+      function pad(num) {
+      return num.toString().padStart(2, '0');
+    }
+
+      function formatTime(t) {
+      const [h, m] = t.split(":");
+      const hour = +h;
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const hr = hour % 12 || 12;
+      return `${pad(hr)}:${m} ${ampm}`;
+    }
+
+
+
+
+  // Feature Cards
+  addClickHandlers('.feature-card', (card, index) => {
+    //console.log("Feature card clicked:", index, card);
+    if (index === 0 ) {console.log("redirect=deposit.html")}
+   if (index === 4) { console.log("redirect=history.html")}
+    (index === 2) && console.log(`share card clicked=${localStorage.getItem("share").replaceAll("\\n", "&&")}`);
+    if (index === 3 ) {localStorage.clear(); console.log("Logout Successfullyyyyy");}
+    if (index === 5 ) {console.log("redirect=profile.html")}
+    if (index === 1 ) {console.log("redirect=withdraw.html")}
+    if (index === 6 ) {console.log("redirect=bhav.html")}
+    if (index === 7 ) {console.log("redirect=settings.html")}
+    // TODO: Add your specific logic for each card here
+  });
+
+  // WhatsApp Cards
+  // WhatsApp Card
+document.getElementById("btn-whatsapp").addEventListener("click", () => {
+  const link = localStorage.getItem("contact");
+  if(link){console.log(`ActivityStarter=url===${link}`)};
+ 
+  });
+
+// Telegram Card
+document.getElementById("btn-telegram").addEventListener("click", () => {
+  const link = localStorage.getItem("telegram");
+  if(link){console.log(`ActivityStarter=url===${link}`)};
+  
+});
+
+// Group Card
+document.getElementById("btn-group").addEventListener("click", () => {
+  const link = localStorage.getItem("you tube");
+  if(link){console.log(`ActivityStarter=url===${link}`)};
+});
+
+let marketListRaw = localStorage.getItem("marketList");
+let marketList = JSON.parse(marketListRaw);
+
+    let currentDay = 0;
+    let dd, MM, yyyy, dayName, walletAmt ;
+    let istDate = new Date();
+    yyyy = istDate.getFullYear();
+    MM = pad(istDate.getMonth() + 1);
+    dd = pad(istDate.getDate());
+    currentdate = `${yyyy}-${MM}-${dd}`
+    let currentTime = `${pad(istDate.getHours())}:${pad(istDate.getMinutes())}:${pad(istDate.getSeconds())}`;
+    const dayMap = { Sunday: "1", Monday: "2", Tuesday: "3", Wednesday: "4", Thursday: "5", Friday: "6", Saturday: "7" };
+    dayName = istDate.toLocaleDateString("en-IN", { weekday: "long" });
+    currentDay = dayMap[dayName];
+    walletAmt = localStorage.getItem("pts") || "0";
+    document.getElementById("wallet-amount").innerText = walletAmt;
+
+
+noticefetch();
+if (marketList) {
+  renderMarketCards(marketList);
+}
+
+// Random unread count (10–50)
+(function () {
+  const unread = Math.floor(Math.random() * 41) + 10;
+  document.getElementById("chat-unread").innerText = unread;
+})();
+
+// Card click action
+function openGroupChat() {
+  console.log("redirect=chat.html");
+}
+
+
+
+  // EXCLUDE: Market Cards (no action added intentionally)
+
+  // ✅ Function to render all market cards
+function renderMarketCards(games) {
+  Object.entries(games).forEach(([key, raw]) => {
+    if (!raw || typeof raw !== "string" || raw === "x") return;
+
+    const data = JSON.parse(raw);
+    if (!data || data.length < 9) return;
+
+    const [marketName, result, openTime, closeTime, isEnabled, isVisible, days, pattern, tip] = data;
+    if (!isVisible) return;
+
+    let status = "Open Running", statusColor = "green", imageSrc = "blue.png", disabledAlert = "";
+    if (!isEnabled) {
+      status = "Market Disabled";
+      statusColor = "red";
+      imageSrc = "red.png";
+      disabledAlert = "Market Disabled";
+    } else if (!days.toString().includes(currentDay.toString())) {
+      status = "Holiday Declared";
+      statusColor = "red";
+      imageSrc = "red.png";
+      disabledAlert = "Holiday Declared For This Market";
+    } else if (currentTime < openTime) {
+      status = "Open Running";
+      statusColor = "green";
+      imageSrc = "blue.png";
+    } else if (currentTime >= openTime && currentTime < closeTime) {
+      status = "Close Running";
+      statusColor = "darkorange";
+      imageSrc = "yellow.png";
+    } else {
+      status = "Market Closed";
+      statusColor = "red";
+      imageSrc = "red.png";
+      disabledAlert = "Market Closed";
+    }
+
+    // ✅ Check if card already exists
+    let existingCard = document.querySelector(`.market-card[data-market="${marketName}"]`);
+    if (existingCard) {
+      // Replace content
+      existingCard.querySelector(".market-name").textContent = marketName;
+      existingCard.querySelector(".market-result").textContent = result;
+      const marketTimes = existingCard.querySelectorAll(".market-time");
+      if (marketTimes.length === 2) {
+        marketTimes[0].textContent = formatTime(openTime);
+        marketTimes[1].textContent = formatTime(closeTime);
+      }
+      existingCard.querySelector(".market-status").textContent = status;
+      existingCard.querySelector(".market-status").style.color = statusColor;
+      existingCard.querySelector(".play-icon").src = `assets/${imageSrc}`;
+      existingCard.querySelector(".play-icon").onclick = imageSrc === "blue.png" || imageSrc === "yellow.png"
+        ? () => {
+            localStorage.setItem("marketName", marketName);
+            localStorage.setItem("marketType", imageSrc === "blue.png" ? "Open" : "Close");
+            console.log("redirect=type.html");
+          }
+        : () => alertsnack("red", disabledAlert);
+
+    } else {
+      // Create new card
+      const card = document.createElement("div");
+      card.className = "market-card";
+      card.setAttribute("data-market", marketName); // ✅ Unique identifier
+
+      card.innerHTML = `
+        <div class="market-header">
+          <img src="https://cdn-icons-png.flaticon.com/128/3652/3652191.png" alt="Chart" class="chart-icon" data-market="${marketName}">
+          <div class="market-info">
+            <div class="market-column">
+              <div class="market-name">${marketName}</div>
+              <div class="market-result">${result}</div>
+            </div>
+            <div class="market-column">
+              <div class="market-time">${formatTime(openTime)}</div>
+              <div class="market-time">${formatTime(closeTime)}</div>
+            </div>
+          </div>
+          <img src="assets/${imageSrc}" class="play-icon" data-market="${marketName}" alt="Play">
+        </div>
+        <div class="market-status" style="color:${statusColor}">${status}</div>
+      `;
+
+      const playBtn = card.querySelector(".play-icon");
+      if (imageSrc === "blue.png" || imageSrc === "yellow.png") {
+        playBtn.onclick = () => {
+          localStorage.setItem("marketName", marketName);
+          localStorage.setItem("marketType", imageSrc === "blue.png" ? "Open" : "Close");
+          console.log("redirect=type.html");
+        };
+      } else {
+        playBtn.onclick = () => alertsnack("red", disabledAlert);
+      }
+
+      const chartBtn = card.querySelector(".chart-icon");
+      chartBtn.onclick = () => {
+        localStorage.setItem("chartMarket", marketName);
+        console.log(`chart=${localStorage.getItem('R-URL').replace("--ID--", marketName.replace(/\s+/g, "-").toLowerCase())}`);
+      };
+
+      container.appendChild(card);
+    }
+  });
+}
+
+  (async function () {
+    const FU = localStorage.getItem("FU");
+    const FT = localStorage.getItem("FT");
+    const userid = localStorage.getItem("userid");
+    const localDID = localStorage.getItem("DID");
+
+    const config = {
+      databaseURL: FU,
+      apiKey: FT,
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    await firebase.auth().signInAnonymously();
+    db = firebase.database();
+
+    const timestampRef = db.ref("/TIMESTAMP/timestamps");
+    await timestampRef.set(firebase.database.ServerValue.TIMESTAMP);
+
+    
+
+
+    let simulatedTime = 0;
+
+    let fetched = false;
+
+    timestampRef.on("value", async (snapshot) => {
+      const serverTimestamp = snapshot.val();
+      if (!serverTimestamp || fetched) return;
+
+      simulatedTime = serverTimestamp;
+      fetched = true;
+
+      // 🛠️ ⬇️ Manually set time parts once right now
+      istDate = new Date(simulatedTime);
+      yyyy = istDate.getFullYear();
+      MM = pad(istDate.getMonth() + 1);
+      dd = pad(istDate.getDate());
+      currentdate = `${yyyy}-${MM}-${dd}`
+      localStorage.setItem("currentDate",currentdate);
+      currentTime = `${pad(istDate.getHours())}:${pad(istDate.getMinutes())}:${pad(istDate.getSeconds())}`;
+      dayName = istDate.toLocaleDateString("en-IN", { weekday: "long" });
+      currentDay = dayMap[dayName];
+
+      // 🕒 Continue ticking time forward every second
+      setInterval(() => {
+        simulatedTime += 1000;
+        istDate = new Date(simulatedTime);
+        localStorage.setItem("timestamp", simulatedTime);
+
+       
+        document.getElementById("live-time").innerText = istDate.toLocaleTimeString("en-IN", {
+           hour: "2-digit",
+           minute: "2-digit",
+           second: "2-digit",
+           hour12: true,
+         }).toUpperCase();
+
+
+
+        yyyy = istDate.getFullYear();
+        MM = pad(istDate.getMonth() + 1);
+        dd = pad(istDate.getDate());
+        currentTime = `${pad(istDate.getHours())}:${pad(istDate.getMinutes())}:${pad(istDate.getSeconds())}`;
+        //currentDay = istDate.getDay() === 0 ? 7 : istDate.getDay();
+        
+      }, 1000);
+
+      // 🔄 Fetch ADM, USERS, GAMES after time is set
+      // Get ADM and GAMES once
+// 🔴 LIVE ADM
+db.ref("/ADM/").on("value", (snap) => {
+  const adm = snap.val();
+  if (!adm) return;
+
+  Object.entries(adm).forEach(([key, value]) => {
+    const kyy = key.trim();
+    const val = value.toString().replace(/["\\]/g, '').trim();
+    localStorage.setItem(kyy, val);
+    console.log(`save=${kyy}||&||${val}`);
+  });
+
+  noticefetch(); // banner / marquee / video refresh
+});
+
+// 🔴 LIVE GAMES
+db.ref("/GAMES/").on("value", (snap) => {
+  const games = snap.val();
+  if (!games) return;
+
+  localStorage.setItem("marketList", JSON.stringify(games));
+  renderMarketCards(games);
+});
+
+
+// Listen to USERS live
+db.ref(`/USERS/${userid}`).on("value", function(userSnap) {
+  const user = userSnap.val();
+  if (!user) return;
+
+  const serverDID = (user.DID || "").replace(/"/g, "").trim();
+
+  if (serverDID !== localDID) {
+    localStorage.clear();
+    console.log("Logout Successfullyyyyy");
+    return;
+  }
+
+  walletAmt = String(user?.pts ?? "0").replace(/"/g, "").trim();
+
+  localStorage.setItem("pts", walletAmt);
+  const username = String(user?.user ?? "").replace(/"/g, "").trim();
+  
+
+      localStorage.setItem("username", username);
+      document.getElementById("wallet-amount").innerText = walletAmt;
+      globalpts = walletAmt;
+      globalusername = username;
+});
+
+      const lastSeen = `"${dd}-${MM}-${yyyy} ${istDate.toLocaleTimeString("en-IN")}"`;
+      const lastActive = `${istDate.toLocaleTimeString("en-IN")}`;
+      await db.ref(`/USERS/${userid}/LS`).set(lastSeen);
+      await db.ref(`/T ACTIVE/${yyyy}-${MM}-${dd}/${userid}/T`).set(`"${userid}&${globalusername}&${globalpts}&${lastActive}"`);
+
+
+// 🔁 Re-render every 60 seconds using updated time
+setInterval(() => {
+  istDate = new Date(simulatedTime);
+  yyyy = istDate.getFullYear();
+  MM = pad(istDate.getMonth() + 1);
+  dd = pad(istDate.getDate());
+  currentTime = `${pad(istDate.getHours())}:${pad(istDate.getMinutes())}:${pad(istDate.getSeconds())}`;
+  dayName = istDate.toLocaleDateString("en-IN", { weekday: "long" });
+  currentDay = dayMap[dayName];
+
+  const liveGames = JSON.parse(localStorage.getItem("marketList"));
+  if (liveGames) renderMarketCards(liveGames);
+}, 60000);
+
+
+ });
+
+    // Helpers
+ 
+    window.alertsnack = function (color, message) {
+      let snack = document.getElementById("snackbar");
+      if (!snack) {
+        snack = document.createElement("div");
+        snack.id = "snackbar";
+        snack.style.position = "fixed";
+        snack.style.bottom = "20px";
+        snack.style.left = "50%";
+        snack.style.transform = "translateX(-50%)";
+        snack.style.padding = "12px 24px";
+        snack.style.borderRadius = "6px";
+        snack.style.color = "white";
+        snack.style.fontWeight = "bold";
+        snack.style.zIndex = 9999;
+        document.body.appendChild(snack);
+      }
+      snack.style.backgroundColor = color;
+      snack.innerText = message;
+      snack.style.opacity = 1;
+
+      setTimeout(() => {
+        snack.style.opacity = 0;
+      }, 3000);
+    };
+  })();
+
+</script>
+
+
+</body>
+</html>

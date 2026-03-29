@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet"/>
+  <title>Number Entry</title>
+  <style>
+    html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: var(--background);
+  transition: background 0.5s;
+
+  /* 🔒 CRITICAL */
+  overflow: hidden;
+
+  /* body should NOT be flex for scrolling pages */
+}
+
+    .title-bar {
+      border-radius: 20px;
+      padding: 10px;
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .toggle-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.8rem;
+      transition: all 0.3s;
+      box-shadow: 0 1px 5px var(--color1);
+    }
+    .toggle-btn.active {
+      background: linear-gradient(135deg, var(--color1), var(--color2));
+      color: white;
+      text-shadow: 1px 1px 2px black;
+    }
+    .toggle-btn:not(.active) {
+      background: white;
+      color: black;
+    }
+.key-selector {
+  display: flex;
+  flex-wrap: wrap; /* allow wrapping to next line */
+  gap: 5px;
+  justify-content: center; /* center keys */
+  margin: 10px 0;
+}
+    .key-card {
+  flex: 0 0 auto; /* prevent expansion */
+  width: 50px;     /* fixed width */
+  padding: 6px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  user-select: none;
+}
+    .key-card.selected {
+      color: white;
+    }
+    .toggle-container { display: none; }
+    .toggle-container.active { display: block; }
+    #numberCardList {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .number-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 5px;
+      border-radius: 15px;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .number-box {
+      background: var(--color1);
+      color: white;
+      font-weight: bold;
+      font-size: 0.8rem;
+      padding: 10px;
+      border-radius: 10px;
+      min-width: 40px;
+      text-align: center;
+      text-shadow: 1px 1px 2px black;
+      margin-right: 10px;
+    }
+    .number-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .number-input::-webkit-outer-spin-button,
+    .number-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .add-btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 2px 5px var(--color1);
+      box-sizing: border-box;
+    }
+
+    body.gradient .add-btn {
+      background: white;
+      color: black;
+    }
+
+    body:not(.gradient) .add-btn {
+      background: linear-gradient(135deg, var(--color1), var(--color2));
+      color: white;
+      text-shadow: 1px 1px 2px black;
+    }
+    .fixed-amount-box {
+      width: 50%;
+      margin: 0 auto 10px auto;
+      padding: 10px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    .helper-text {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    .number-btn {
+      padding: 15px;
+      text-align: center;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    #submitter-container {
+      width: 100%;
+      margin-top: 20px;
+      box-sizing: border-box;
+    }
+    .page-scroll {
+  height: 100vh;        /* fixed viewport */
+  overflow-y: auto;     /* scrolling happens here */
+  padding: 10px;        /* moved from body */
+  box-sizing: border-box;
+}
+  </style>
+</head>
+<body>
+  <div class="page-scroll">
+
+    <div id="titleBar" class="title-bar">Loading...</div>
+
+    <div class="toggle-buttons">
+      <div id="diffAmountBtn" class="toggle-btn active">Different Amount</div>
+      <div id="fixedAmountBtn" class="toggle-btn">Fixed Amount</div>
+    </div>
+
+    <div id="keySelector" class="key-selector"></div>
+
+    <div id="container1" class="toggle-container active">
+      <div id="numberCardList"></div>
+      <div id="addBtn" class="add-btn">Add</div>
+    </div>
+
+    <div id="container2" class="toggle-container">
+      <input id="amountBox" class="fixed-amount-box" type="number" placeholder="Enter Points" />
+      <div id="helperText" class="helper-text">Enter points and select below numbers</div>
+      <div id="fixedNumberList" class="number-grid"></div>
+    </div>
+
+    <div id="submitter-container"></div>
+
+  </div>
+  <script src="config.js"></script>
+  <script src="theme.js"></script>
+  <script src="numbers.js"></script>
+  <script src="loader.js"></script>
+  <script>
+    let selectedKey = 0;
+    function initializePage() {
+      const marketName = localStorage.getItem("marketName") || "Market";
+      const marketType = localStorage.getItem("marketType") || "Type";
+      const marketSubtype = localStorage.getItem("marketSubtype") || "Single Digit";
+      const pts = parseInt(localStorage.getItem("pts") || "0");
+      const minEntry = parseInt(localStorage.getItem("Entry Min") || "10");
+      const entryRange = parseInt(localStorage.getItem("Entry Range") || "10");
+
+      const color1 = AppConfig.mainColor1;
+      const color2 = AppConfig.mainColor2;
+      const isGradient = AppConfig.useGradient;
+
+      document.body.style.setProperty('--color1', color1);
+      document.body.style.setProperty('--color2', color2);
+
+      document.getElementById('titleBar').innerText = `${marketName} - ${marketType} - ${marketSubtype}`;
+      if (!(AppConfig.backgroundSVG && AppConfig.backgroundSVG.useSVG === true)) {
+         document.body.style.background = isGradient? `linear-gradient(135deg, ${color1}, ${color2})`: '#f2f2f2';
+         }  // SVG ON → BODY background theme.js handle karega
+
+        const titleBar = document.getElementById('titleBar');
+        const addBtn= document.getElementById('addBtn');
+  titleBar.innerText = `${marketName} - ${marketType} - ${marketSubtype}`;
+  if (AppConfig.backgroundSVG && AppConfig.backgroundSVG.useSVG === true) {
+
+  titleBar.style.background = "#ffffff";
+  titleBar.style.color = color1;
+  titleBar.style.textShadow = "none";
+
+  addBtn.style.background = `linear-gradient(135deg, ${color1}, ${color2})`;
+  addBtn.style.color = "#fff";
+  addBtn.style.textShadow = "1px 1px 2px black";
+
+} else if (isGradient) {
+
+  titleBar.style.background = "#fff";
+  titleBar.style.color = "#000";
+  titleBar.style.textShadow = "none";
+
+  addBtn.style.background = "#fff";
+  addBtn.style.color = color1;
+  addBtn.style.textShadow = "0px 0px 0px black";
+
+} else {
+
+  titleBar.style.background = `linear-gradient(135deg, ${color1}, ${color2})`;
+  titleBar.style.color = "#fff";
+  titleBar.style.textShadow = "1px 1px 2px black";
+
+  addBtn.style.background = `linear-gradient(135deg, ${color1}, ${color2})`;
+  addBtn.style.color = "#fff";
+  addBtn.style.textShadow = "1px 1px 2px black";
+}
+
+
+      const keyMap = NumberKeyMap[marketSubtype];
+      const showKeys = !["Single Digit", "Triple Panel"].includes(marketSubtype) &&
+                 keyMap && Object.values(keyMap).some(arr => arr.length > 1);
+
+      document.getElementById('keySelector').style.display = showKeys ? 'flex' : 'none';
+
+      function renderKeyButtons() {
+        const container = document.getElementById('keySelector');
+        container.innerHTML = '';
+        for (let i = 0; i < 10; i++) {
+          const btn = document.createElement('div');
+          btn.className = 'key-card';
+          btn.innerText = i;
+          btn.style.background = (i === selectedKey) ? "#099728ff" : "#fff";
+          btn.classList.toggle('selected', i === selectedKey);
+          btn.addEventListener('click', () => {
+            selectedKey = i;
+            renderKeyButtons();
+            updateDifferentAmountCards();
+            updateFixedAmountButtons();
+          });
+          container.appendChild(btn);
+        }
+      }
+
+      function updateDifferentAmountCards() {
+  const list = document.getElementById('numberCardList');
+  list.innerHTML = '';
+
+  let nums = [];
+
+  if (["Single Digit", "Triple Panel"].includes(marketSubtype)) {
+    // Combine all keys' values if each has only one number
+    nums = Object.values(keyMap || {}).flat();
+  } else {
+    nums = keyMap?.[selectedKey] || [];
+  }
+
+  nums.forEach(num => {
+    const card = document.createElement('div');
+    card.className = 'number-card';
+    card.innerHTML = `<div class="number-box">${num}</div><input type="number" class="number-input" placeholder="0">`;
+    list.appendChild(card);
+  });
+}
+
+
+      function updateFixedAmountButtons() {
+  const grid = document.getElementById('fixedNumberList');
+  grid.innerHTML = '';
+
+  let nums = [];
+
+  if (["Single Digit", "Triple Panel"].includes(marketSubtype)) {
+    // Show all values from all keys if each has only one
+    nums = Object.values(keyMap || {}).flat();
+  } else {
+    nums = keyMap?.[selectedKey] || [];
+  }
+  let allow = true;
+  nums.forEach(num => {
+    const btn = document.createElement('div');
+    btn.className = 'number-btn';
+    btn.innerText = num;
+    btn.style.background = isGradient ? "#fff" : `linear-gradient(135deg, ${color1}, ${color2})`;
+    btn.style.color = isGradient ? color1 : '#fff';
+    btn.style.boxShadow = `0 2px 5px ${color1}`;
+    btn.addEventListener('click', () => {
+      const amt = parseInt(document.getElementById('amountBox').value || "0");
+      if (amt >= minEntry && amt % entryRange === 0) {
+        initializeSubmitter([num], [amt], pts);
+      } else {
+        allow = false;
+        console.log(allow)
+        document.getElementById('amountBox').value = '';
+      }
+    });
+    grid.appendChild(btn);
+  });
+  if(!allow){alert(`Entry should be ${entryRange}, ${entryRange * 2}, ${entryRange * 3} ...`);}
+}
+
+
+      document.getElementById('diffAmountBtn').onclick = () => toggleMode(true);
+      document.getElementById('fixedAmountBtn').onclick = () => toggleMode(false);
+
+      function toggleMode(isDiff) {
+        document.getElementById('diffAmountBtn').classList.toggle('active', isDiff);
+        document.getElementById('fixedAmountBtn').classList.toggle('active', !isDiff);
+        document.getElementById('container1').classList.toggle('active', isDiff);
+        document.getElementById('container2').classList.toggle('active', !isDiff);
+        clearInputs();
+      }
+
+      function clearInputs() {
+        document.querySelectorAll('.number-input').forEach(i => i.value = '');
+        document.getElementById('amountBox').value = '';
+      }
+
+      document.getElementById('addBtn').onclick = () => {
+        const nums = [];
+        const ptsArr = [];
+        let allow = true;
+        document.querySelectorAll('#numberCardList .number-card').forEach(card => {
+          const num = card.querySelector('.number-box').innerText;
+          const amt = parseInt(card.querySelector('.number-input').value || "0");
+          if (amt >= minEntry && amt % entryRange === 0) {
+            nums.push(num);
+            ptsArr.push(amt);
+          } else if (amt > 0) {
+            allow = false;
+            card.querySelector('.number-input').value = '';
+          }
+        });
+        if (!allow){alert(`Entry should be ${entryRange}, ${entryRange * 2}, ${entryRange * 3} ...`);};
+        if (nums.length > 0) {initializeSubmitter(nums, ptsArr, pts); clearInputs();};
+      };
+
+      if (showKeys) renderKeyButtons();
+      updateDifferentAmountCards();
+      updateFixedAmountButtons();
+
+      loadSubmitter('submitter-container', [], [], pts);
+    }
+    initializePage();
+  </script>
+</body>
+</html>

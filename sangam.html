@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sangam Play</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body{
+  font-family:Poppins,sans-serif;
+
+  /* 🔒 critical */
+  overflow: hidden;
+
+  /* background is handled by theme.js */
+}
+.page{
+  height: 100vh;        /* fixed viewport */
+  overflow-y: auto;     /* scroll ONLY here */
+  padding:10px;
+  padding-bottom:120px;
+  box-sizing:border-box;
+}
+.title-bar{
+  padding:12px;border-radius:18px;
+  font-weight:600;margin-bottom:10px;
+  text-align:center; /* ✅ FIX 1: center title */
+}
+.toggle-row{display:flex;gap:10px;margin-bottom:12px}
+.toggle{
+  flex:1;padding:12px;border-radius:14px;
+  background:#fff;text-align:center;
+  font-weight:bold;cursor:pointer;
+  box-shadow:0 2px 5px rgba(0,0,0,.2)
+}
+.toggle.sel{background:#099728;color:#fff}
+.input{
+  width:100%;padding:12px;border-radius:14px;
+  border:1px solid #ccc;margin-bottom:12px;
+  text-align:center
+}
+.add-btn{
+  width:100%;padding:14px;border-radius:30px;
+  font-weight:bold;text-align:center;
+  cursor:pointer;margin-bottom:12px
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+<div id="titleBar" class="title-bar"></div>
+
+<!-- HALF SANGAM TOGGLE -->
+<div id="halfToggle" class="toggle-row" style="display:none">
+  <div id="leftBtn" class="toggle sel">Left Sangam</div>
+  <div id="rightBtn" class="toggle">Right Sangam</div>
+</div>
+
+<!-- INPUTS -->
+<input id="field1" class="input" 
+       type="text" inputmode="numeric" pattern="[0-9]*">
+
+<input id="field2" class="input" 
+       type="text" inputmode="numeric" pattern="[0-9]*" style="display:none">
+
+<input id="amount" class="input" 
+       type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Enter Amount">
+
+
+<div id="addBtn" class="add-btn">ADD</div>
+<div id="submitter-container"></div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="theme.js"></script>
+<script src="numbers.js"></script>
+<script src="loader.js"></script>
+
+<script>
+/* ================= INIT ================= */
+const subtype = localStorage.getItem("marketSubtype") || "";
+const market = localStorage.getItem("marketName") || "";
+const mtype  = localStorage.getItem("marketType") || "";
+
+const minEntry = +localStorage.getItem("Entry Min") || 10;
+const range    = +localStorage.getItem("Entry Range") || 10;
+const pts      = +localStorage.getItem("pts") || 0;
+
+/* ================= THEME ================= */
+const cfg = window.AppConfig;
+const c1 = cfg.mainColor1, c2 = cfg.mainColor2;
+
+
+
+titleBar.innerText = `${market} • ${mtype} • ${subtype}`;
+titleBar.style.background="#fff";
+titleBar.style.color=c1;
+addBtn.style.background=`linear-gradient(135deg,${c1},${c2})`;
+addBtn.style.color="#fff";
+
+/* ================= PANELS ================= */
+const ALL_PANELS = new Set(
+  Object.values(NUMBERS.SP).flat()
+  .concat(Object.values(NUMBERS.DP).flat())
+  .concat(Object.values(NUMBERS.TP).flat())
+);
+
+/* ================= FAMILY PATTI ================= */
+const FAMILY_GROUPS = [
+["111","116","166","666"],
+["112","117","126","167","266","667"],
+["113","118","136","168","366","668"],
+["114","119","146","169","466","669"],
+["110","115","156","160","566","660"],
+["122","127","177","226","267","677"],
+["123","128","137","178","236","268","367","678"],
+["124","129","147","179","246","269","467","679"],
+["120","125","157","170","256","260","567","670"],
+["133","138","188","336","368","688"],
+["134","139","148","189","346","369","468","689"],
+["130","135","158","180","356","360","568","680"],
+["144","149","199","446","469","699"],
+["140","145","159","190","456","460","569","690"],
+["100","150","155","556","560","600"],
+["222","227","277","777"],
+["223","228","237","278","377","778"],
+["224","229","247","279","477","779"],
+["220","225","257","270","577","770"],
+["233","238","288","337","378","788"],
+["234","239","248","289","347","379","478","789"],
+["230","235","258","280","357","370","578","780"],
+["244","249","299","447","479","799"],
+["240","245","259","290","457","470","579","790"],
+["200","250","255","557","570","700"],
+["333","338","388","888"],
+["334","339","348","389","488","889"],
+["330","335","358","380","588","880"],
+["344","349","399","448","489","899"],
+["340","345","359","390","458","480","589","890"],
+["300","350","355","558","580","800"],
+["444","449","499","999"],
+["440","445","459","490","599","990"],
+["400","450","455","559","590","900"],
+["000","500","550","555"]
+];
+
+/* ================= MODE ================= */
+let halfMode="LEFT";
+
+/* ================= UI SETUP ================= */
+if(subtype==="Half Sangam"){
+  halfToggle.style.display="flex";
+  field1.placeholder="Enter Open Panel (3 digit)";
+  field2.style.display="block";
+  field2.placeholder="Enter Close Digit (0-9)";
+}
+else if(subtype==="Full Sangam"){
+  field1.placeholder="Enter Open Panel (3 digit)";
+  field2.style.display="block";
+  field2.placeholder="Enter Close Panel (3 digit)";
+}
+else{
+  field1.placeholder="Enter Panel (3 digit)";
+}
+
+/* ================= TOGGLE ================= */
+leftBtn.onclick=()=>{
+  halfMode="LEFT";
+  leftBtn.classList.add("sel");
+  rightBtn.classList.remove("sel");
+  field1.placeholder="Enter Open Panel (3 digit)";
+  field2.placeholder="Enter Close Digit (0-9)";
+};
+rightBtn.onclick=()=>{
+  halfMode="RIGHT";
+  rightBtn.classList.add("sel");
+  leftBtn.classList.remove("sel");
+  field1.placeholder="Enter Open Ank (0-9)";
+  field2.placeholder="Enter Close Panel (3 digit)";
+};
+
+/* ================= ADD ================= */
+addBtn.onclick=()=>{
+  const amt=+amount.value;
+  if(amt<minEntry||amt%range!==0) return alert("Invalid Amount");
+
+  let nums=[];
+
+  if(subtype==="Half Sangam"){
+    if(halfMode==="LEFT"){
+      if(!ALL_PANELS.has(field1.value)) return alert("Incorrect Panel");
+      if(!/^[0-9]$/.test(field2.value)) return alert("Incorrect ANK");
+      nums.push(`${field1.value}-${field2.value}`);
+    }else{
+      if(!/^[0-9]$/.test(field1.value)) return alert("Incorrect ANK");
+      if(!ALL_PANELS.has(field2.value)) return alert("Incorrect Panel");
+      nums.push(`${field1.value}-${field2.value}`);
+    }
+  }
+
+  else if(subtype==="Full Sangam"){
+    if(!ALL_PANELS.has(field1.value)||!ALL_PANELS.has(field2.value))
+      return alert("Incorrect Panel");
+    const s1=[...field1.value].reduce((a,b)=>a+ +b,0)%10;
+    const s2=[...field2.value].reduce((a,b)=>a+ +b,0)%10;
+    nums.push(`${field1.value}-${s1}${s2}-${field2.value}`);
+  }
+
+  else if(subtype==="Any Patti"){
+    if(!ALL_PANELS.has(field1.value)) return alert("Incorrect Panel");
+    nums.push(field1.value);
+  }
+
+  else if(subtype==="Family Patti"){
+    if(!ALL_PANELS.has(field1.value)) return alert("Incorrect Panel");
+    const grp = FAMILY_GROUPS.find(g=>g.includes(field1.value));
+    if(!grp) return alert("Family group not found");
+    nums.push(...grp);
+  }
+
+  initializeSubmitter(nums, nums.map(()=>amt), pts);
+  field1.value=""; field2.value=""; amount.value="";
+};
+
+loadSubmitter("submitter-container",[],[],pts);
+</script>
+</body>
+</html>
